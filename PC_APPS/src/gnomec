@@ -1,0 +1,204 @@
+/*! Simple button demo application. Creates a fixed sized window, adds a box
+ *  with a label and two buttons and installs a callback that processes button
+ *  clicks either via the mouse or the keyboard. Also shows how to modify the
+ *  label of a button.
+ *
+ *  USAGE:
+ *  Click one of the buttons using the mouse.
+ *  Press Alt+B to click the lower button using the keyboard.
+ *  Press the Spacebar to click the default (upper) button.
+ */
+#define STRING_SIZE 30
+#include "gnome.h"
+//#include "serial.h"
+
+static void set_dutycycle (GtkWidget *widget, gpointer data)
+{
+  gchar string[STRING_SIZE] = "";
+	// obtain references to the widgets passed as generic data pointer
+	struct my_widgets *wid = (struct my_widgets*) data;
+  wid->dutycycle = gtk_range_get_value (GTK_RANGE (wid->dc_slider));
+  g_snprintf(string,STRING_SIZE,"#SETD:%d$",wid->dutycycle);
+  g_print("%s\n",string);
+  send_cmd(wid->fd, string);
+}
+
+static void set_period (GtkWidget *widget, gpointer data)
+{
+  // obtain references to the widgets passed as generic data pointer
+  struct my_widgets *wid = (struct my_widgets*) data;
+  gchar string[STRING_SIZE] = "";
+  const gchar *entrytext_min=gtk_entry_get_text(GTK_ENTRY(wid->entrybox_min));
+  const gchar *entrytext_sek=gtk_entry_get_text(GTK_ENTRY(wid->entrybox_sek));
+  const gchar *entrytext_msek=gtk_entry_get_text(GTK_ENTRY(wid->entrybox_msek));
+  const gchar *entrytext_usek=gtk_entry_get_text(GTK_ENTRY(wid->entrybox_usek));
+  char *endptr=NULL;
+	int32_t min;
+	int32_t sek;
+  int32_t msek;
+  int32_t usek;
+
+  wid->dutycycle = 50;
+  gtk_range_set_value (GTK_RANGE (wid->dc_slider), wid->dutycycle);
+
+  min=strtol(entrytext_min,&endptr,10);
+  sek=strtol(entrytext_sek,&endptr,10);
+  msek=strtol(entrytext_msek,&endptr,10);
+  usek=strtol(entrytext_usek,&endptr,10);
+
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_min), "");
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_sek), "");
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_msek), "");
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_usek), "");
+
+  g_snprintf(string,STRING_SIZE,"#SETP:%d:%d:%d:%d$",min,sek,msek,usek);
+  g_print("%s\n",string);
+  send_cmd(wid->fd, string);
+}
+
+static void reset (GtkWidget *widget, gpointer data)
+{
+  gchar string[STRING_SIZE] = "";
+	// obtain references to the widgets passed as generic data pointer
+	struct my_widgets *wid = (struct my_widgets*) data;
+
+  wid->dutycycle = 50;
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_min), "");
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_sek), "");
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_msek), "");
+  gtk_entry_set_text (GTK_ENTRY (wid->entrybox_usek), "");
+  gtk_range_set_value (GTK_RANGE (wid->dc_slider), wid->dutycycle);
+
+  g_snprintf(string,STRING_SIZE,"#RES$");
+  g_print("%s\n",string);
+  send_cmd(wid->fd, string);
+}
+
+// app activate callback - creates the window
+static void
+activate (GtkApplication* app, gpointer user_data)
+{
+  GtkWidget *window;
+  GtkWidget *grid;
+  GtkWidget *headerbar;
+	GtkWidget *mainbox, *sliderbox;
+  GtkWidget *label;
+  struct my_widgets *wid = (struct my_widgets*) user_data;
+  const gchar title[] = "pwm_demo", name[] = "Verena Riedl";
+  wid->dutycycle = 50;
+
+  // create the window and set a title
+  window = gtk_application_window_new (app);
+  gtk_window_set_title (GTK_WINDOW (window), "PWM control");
+  // gtk_window_set_default_size(GTK_WINDOW(window), 300, 250);
+  gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+
+  mainbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+	gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(mainbox));
+	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
+
+  headerbar = gtk_header_bar_new();
+	gtk_header_bar_set_title(GTK_HEADER_BAR(headerbar), title);
+	gtk_header_bar_set_subtitle(GTK_HEADER_BAR(headerbar), name);
+	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
+	gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(headerbar), TRUE);
+
+   sliderbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+   label = gtk_label_new("Dutycycle");
+   gtk_box_pack_start(GTK_BOX(mainbox), GTK_WIDGET(sliderbox), FALSE, TRUE,0);
+  gtk_box_pack_start(GTK_BOX(sliderbox), label, FALSE, FALSE, 0);
+
+  wid->dc_slider = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL,0,100,10);
+  gtk_scale_set_value_pos(GTK_SCALE (wid->dc_slider),GTK_POS_RIGHT);
+  gtk_range_set_value (GTK_RANGE (wid->dc_slider), wid->dutycycle);
+  gtk_box_pack_start(GTK_BOX(sliderbox), wid->dc_slider, FALSE, FALSE, 0);
+  g_signal_connect(G_OBJECT(wid->dc_slider), "value-changed",G_CALLBACK(set_dutycycle), (gpointer) wid);
+
+  // create a grid to be used as layout container
+  grid = gtk_grid_new();
+  gtk_box_pack_start(GTK_BOX(mainbox), GTK_WIDGET(grid), FALSE, TRUE,0);
+
+  label= gtk_label_new("Period: ");
+  gtk_grid_attach (GTK_GRID (grid), label, 0, 0, 1, 1);
+
+  label = gtk_label_new("min ");
+  gtk_grid_attach (GTK_GRID (grid), label, 0, 1, 1, 1);
+
+  label = gtk_label_new("sek ");
+  gtk_grid_attach (GTK_GRID (grid), label, 0, 2, 1, 1);
+
+  label = gtk_label_new("msek ");
+  gtk_grid_attach (GTK_GRID (grid), label, 0, 3, 1, 1);
+
+  label = gtk_label_new("usek ");
+  gtk_grid_attach (GTK_GRID (grid), label, 0, 4, 1, 1);
+
+  /* Entry Box min */
+	wid->entrybox_min = gtk_entry_new();
+	gtk_widget_set_size_request(GTK_WIDGET(wid->entrybox_min), 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(wid->entrybox_min), 1, 1, 1, 1);
+  g_signal_connect(wid->entrybox_min, "activate", G_CALLBACK(set_period), wid->entrybox_min);
+
+  /* Entry Box sek*/
+	wid->entrybox_sek = gtk_entry_new();
+	gtk_widget_set_size_request(GTK_WIDGET(wid->entrybox_sek), 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(wid->entrybox_sek), 1, 2, 1, 1);
+  g_signal_connect(wid->entrybox_sek, "activate", G_CALLBACK(set_period), wid->entrybox_sek);
+
+  /* Entry Box msek*/
+	wid->entrybox_msek = gtk_entry_new();
+	gtk_widget_set_size_request(GTK_WIDGET(wid->entrybox_msek), 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(wid->entrybox_msek), 1, 3, 1, 1);
+  g_signal_connect(wid->entrybox_msek, "activate", G_CALLBACK(set_period), wid->entrybox_msek);
+
+  /* Entry Box usek*/
+	wid->entrybox_usek = gtk_entry_new();
+	gtk_widget_set_size_request(GTK_WIDGET(wid->entrybox_usek), 1, 1);
+	gtk_grid_attach(GTK_GRID(grid), GTK_WIDGET(wid->entrybox_usek), 1, 4, 1, 1);
+  g_signal_connect(wid->entrybox_usek, "activate", G_CALLBACK(set_period), wid->entrybox_usek);
+
+  // Enter period
+  wid->periodbutton = gtk_button_new_with_label ("Change period");
+  gtk_grid_attach (GTK_GRID (grid), wid->periodbutton, 1, 6, 1,1);
+  g_signal_connect (wid->periodbutton, "clicked", G_CALLBACK (set_period), (gpointer) wid);
+  //
+  // Reset values
+  wid->resetbutton = gtk_button_new_with_label ("Reset");
+  gtk_grid_attach (GTK_GRID (grid), wid->resetbutton, 0, 6, 1, 1);
+  g_signal_connect (wid->resetbutton, "clicked", G_CALLBACK (reset), (gpointer) wid);
+
+  /* now show all created widgets */
+  gtk_widget_show_all (window);
+}
+
+int main (int argc, char **argv)
+{
+	GtkApplication *app;
+	int status;
+
+  // *************** Serial ***************
+  char *portname = "/dev/ttyUSB0";
+  int fd;
+
+  fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+  if (fd < 0) {
+      printf("Error opening %s: %s\n", portname, strerror(errno));
+      return -1;
+  }
+  /*baudrate 115200, 8 bits, no parity, 1 stop bit */
+  set_interface_attribs(fd, B9600);
+
+  struct my_widgets *wid = g_malloc (sizeof (struct my_widgets));
+  wid->fd = fd;
+	// create a threaded application
+	app = gtk_application_new (NULL, G_APPLICATION_FLAGS_NONE);
+	g_signal_connect (app, "activate", G_CALLBACK (activate), (gpointer) wid);
+	// run the application -> emits an "activate" signal
+	status = g_application_run (G_APPLICATION (app), argc, argv);
+	g_object_unref (app);
+
+  g_free(wid);
+  wid = NULL;
+	return status;
+}
+/** EOF */

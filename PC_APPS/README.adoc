@@ -1,0 +1,11 @@
+Project:
+
+GUI:
+help for the command-line implementation:
+https://github.com/frida/glib/blob/master/gio/tests/gapplication-example-cmdline3.c
+
+keyboard accelerators:
+open: Crtl + 0
+save: Crtl + S
+quit: Crtl + Q
+about: Crtl + A
