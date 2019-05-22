@@ -32,7 +32,7 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 	if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
 
 		a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
-		parse_GCode(a->filename);
+		a->cmd_num = parse_GCode (a->filename);
 		// if (a->pixbuf != NULL) {
 		// 	a->pixbuf = NULL;
 		// }
@@ -43,11 +43,11 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 		// } else {
 		// 	gtk_image_set_from_pixbuf (GTK_IMAGE (a->image), a->pixbuf);
 
-			check_len ( (sizeof (a->msg) - strlen ("opened from ")), (sizeof (a->msg) - strlen ("Opened from ...")), a, 1);
-			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
-			a->filename = short_name (a->filename, '/');
-			gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
-			// g_object_unref (a->pixbuf);
+		check_len ( (sizeof (a->msg) - strlen ("opened from ")), (sizeof (a->msg) - strlen ("Opened from ...")), a, 1);
+		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
+		a->filename = short_name (a->filename, '/');
+		gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
+		// g_object_unref (a->pixbuf);
 		// }
 	}
 	gtk_widget_destroy (chooser);
@@ -58,45 +58,45 @@ save_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
 	widgets *a = (widgets *) data;
 	// if (a->pixbuf != NULL) {
-		GtkWidget *chooser;
-		GtkFileFilter *filter;
-		const gchar * filtername = "jpeg";
-		gchar *fn = NULL;
+	GtkWidget *chooser;
+	GtkFileFilter *filter;
+	const gchar * filtername = "jpeg";
+	gchar *fn = NULL;
 
-		chooser = gtk_file_chooser_dialog_new ("File Save ...",
-						       GTK_WINDOW (a ->window),
-						       GTK_FILE_CHOOSER_ACTION_SAVE,
-						       "_Cancel", GTK_RESPONSE_CANCEL,
-						       "_Save", GTK_RESPONSE_ACCEPT,
-						       NULL);
-		gtk_window_set_default_size (GTK_WINDOW (chooser), 300, 300);
-		filter = file_choose ("jpeg", chooser);
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
-		filter = file_choose ("png", chooser);
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
-		filter = file_choose ("ico", chooser);
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
-		filter = file_choose ("bmp", chooser);
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
+	chooser = gtk_file_chooser_dialog_new ("File Save ...",
+					       GTK_WINDOW (a ->window),
+					       GTK_FILE_CHOOSER_ACTION_SAVE,
+					       "_Cancel", GTK_RESPONSE_CANCEL,
+					       "_Save", GTK_RESPONSE_ACCEPT,
+					       NULL);
+	gtk_window_set_default_size (GTK_WINDOW (chooser), 300, 300);
+	filter = file_choose ("jpeg", chooser);
+	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
+	filter = file_choose ("png", chooser);
+	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
+	filter = file_choose ("ico", chooser);
+	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
+	filter = file_choose ("bmp", chooser);
+	gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
 
-		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), a->filename);
-		if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
-			a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
-			fn = short_name (a->filename, '.');
-			if (strcmp (fn, "jpeg") == 0 || strcmp (fn, "bmp") == 0 || strcmp (fn, "png") == 0 || strcmp (fn, "ico") == 0) {
-				filtername = fn;
-			} else {
-				filter = gtk_file_chooser_get_filter (GTK_FILE_CHOOSER (chooser));
-				filtername = gtk_file_filter_get_name (filter);
-			}
-			gdk_pixbuf_save (a->pixbuf, a->filename, filtername, NULL, NULL, NULL, NULL);
-
-			check_len ( (sizeof (a->msg) - strlen ("saved to ")), (sizeof (a->msg) - strlen ("saved to ...")), a, 0);
-			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
-			a->filename = short_name (a->filename, '/');
-			gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), a->filename);
+	if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
+		a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
+		fn = short_name (a->filename, '.');
+		if (strcmp (fn, "jpeg") == 0 || strcmp (fn, "bmp") == 0 || strcmp (fn, "png") == 0 || strcmp (fn, "ico") == 0) {
+			filtername = fn;
+		} else {
+			filter = gtk_file_chooser_get_filter (GTK_FILE_CHOOSER (chooser));
+			filtername = gtk_file_filter_get_name (filter);
 		}
-		gtk_widget_destroy (chooser);
+		gdk_pixbuf_save (a->pixbuf, a->filename, filtername, NULL, NULL, NULL, NULL);
+
+		check_len ( (sizeof (a->msg) - strlen ("saved to ")), (sizeof (a->msg) - strlen ("saved to ...")), a, 0);
+		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
+		a->filename = short_name (a->filename, '/');
+		gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
+	}
+	gtk_widget_destroy (chooser);
 	// } else {
 	// 	noimage (data);
 	// }
@@ -189,6 +189,8 @@ void
 cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	widgets *w = (widgets*) data;
+	struct gcode *gcode = get_gcode_ptr();
+	int i = 0;
 
 	// obtain the size of the drawing area
 	w->xsize = gtk_widget_get_allocated_width (w->draw);
@@ -203,38 +205,31 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 	cairo_translate (w->cr, 0, 0);
 	cairo_scale (w->cr, w->xsize, w->ysize);
 
-	cairo_t* cr = w->cr;
+	cairo_set_source_rgb (w->cr, 0.0, 0.0, 0.0);
 
-	for (int i = 0; i < 5; i++) {
-		cairo_set_source_rgb (cr, g_random_double(),
-				      g_random_double(),
-				      g_random_double());
-		cairo_move_to (cr, g_random_double(), g_random_double());
-		cairo_line_to (cr, g_random_double(), g_random_double());
-		cairo_stroke (cr);
+	if (w->filename != NULL) {
+		w->filename = NULL;
+		printf ("cmd_num %i\n", w->cmd_num);
+		while (i <= w->cmd_num) {
+			printf ("%i %c %f %f\n", gcode[i].ID, gcode[i].cmd[2], gcode[i].x_val, gcode[i].y_val);
+			if (gcode[i].cmd[2] == '0') {
+				cairo_move_to (w->cr, gcode[i].x_val, gcode[i].y_val);
+			} else if (gcode[i].cmd[2] == '1') {
+				cairo_line_to (w->cr, gcode[i].x_val, gcode[i].y_val);
+			}
 
-		cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
-		cairo_move_to (cr, 0.18, 0.6);
-		cairo_line_to (cr, 0.3,0.2);
-		cairo_stroke (cr);
+			i++;
+		}
+		cairo_stroke (w->cr);
+		cairo_move_to (w->cr, 0.0, 0.0);
+		cairo_line_to (w->cr, 1.0,0.0);
+		cairo_line_to (w->cr, 1.0, 1.0);
+		cairo_line_to (w->cr, 0.0, 1.0);
+		cairo_line_to (w->cr, 0.0, 0.0);
+		cairo_move_to (w->cr, 0.0, 0.0);
+		cairo_stroke (w->cr);
 	}
-	// invoke a drawing function depending on the value of the state variable
-	// switch (w->state) {
-	// case 0:
-	// 	cd_draw_happyface (w);
-	// 	break;
-	// case 1:
-	// 	cd_draw_lines (w);
-	// 	break;
-	// case 2:
-	// 	cd_draw_rectangles (w);
-	// 	break;
-	// case 3:
-	// 	cd_draw_arcs (w);
-	// 	break;
-	// default:
-	// 	break;
-	// }
+
 }
 gboolean
 cd_configure_event (GtkWidget *widget, GdkEventConfigure *event, gpointer data)

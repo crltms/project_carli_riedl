@@ -10,8 +10,21 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
 
-_Bool parse_GCode (char *filename);
+#define STRINGLENGTH 4
+#define LINENUMBER 1000
+
+struct gcode {
+  int ID;
+	char cmd [STRINGLENGTH];
+	double x_val;
+	double y_val;
+};
+
+int parse_GCode (char *filename);
+struct gcode *get_gcode_ptr(void);
 
 #endif
 

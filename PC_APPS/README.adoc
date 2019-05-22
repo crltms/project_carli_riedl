@@ -9,3 +9,11 @@ open: Crtl + 0
 save: Crtl + S
 quit: Crtl + Q
 about: Crtl + A
+
+
+strtod:
+change locales
+LC_NUMERIC="en_US.utf8"
+export LC_NUMERIC
+
+download examples from: https://cnc-apps.com/en/

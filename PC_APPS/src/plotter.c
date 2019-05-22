@@ -80,9 +80,6 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 //------------------------------------------------------------------------------
 	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add (GTK_CONTAINER (a->window), box);
-//image box
-	a->image = gtk_image_new();
-	gtk_box_pack_start (GTK_BOX (box), a->image, FALSE, FALSE, 0);
 //drawing area
 	a->draw = gtk_drawing_area_new();
 	gtk_widget_set_size_request (a->draw, 400, 400);
@@ -109,21 +106,23 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 //commandline handling
 //------------------------------------------------------------------------------
 	if (a->filename != NULL) {
-		a->pixbuf = gdk_pixbuf_new_from_file (a->filename, NULL);
-		if (a->pixbuf == NULL) {
-			g_sprintf (a->msg, "File could not be opened. Try with OPEN-Button.");
-			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
-		} else {
-			gtk_image_set_from_pixbuf (GTK_IMAGE (a->image), a->pixbuf);
+		a->cmd_num=parse_GCode (a->filename);
+		// a->pixbuf = gdk_pixbuf_new_from_file (a->filename, NULL);
+		// if (a->pixbuf == NULL) {
+		// 	g_sprintf (a->msg, "File could not be opened. Try with OPEN-Button.");
+		// 	gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
+		// } else {
+		// 	gtk_image_set_from_pixbuf (GTK_IMAGE (a->image), a->pixbuf);
 			g_sprintf (a->msg, "Opened from commandline");
 			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
 			gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
-		}
-	} else {
-		a->pixbuf = NULL;
+		// }
 	}
+	// else {
+	// 	a->pixbuf = NULL;
+	// }
 
-	
+
 	g_object_unref (editmenu);
 	g_object_unref (gearmenu);
 // connect keyboard accelerators

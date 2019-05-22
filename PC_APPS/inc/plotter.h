@@ -23,6 +23,7 @@ typedef struct {
 	gint xsize;
 	gint ysize;
 	gint state;
+	gint cmd_num;
 	cairo_t* cr;
 
 
