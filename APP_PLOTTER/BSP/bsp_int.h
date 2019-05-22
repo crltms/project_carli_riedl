@@ -12,6 +12,10 @@
 #endif
 
 /******************************************************************** DEFINES */
+/* DIRECTIONS OF PLOTTER */
+
+
+/******************************************************************** DEFINES */
 /* INTERRUPT PRIORITY DEFINES */
 #define  BSP_INT_PRIO_LEVEL_MASK DEF_BIT_MASK(7, 0)
 #define  BSP_INT_PRIO_LEVEL_00   0u

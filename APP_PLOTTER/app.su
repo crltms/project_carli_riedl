@@ -1,6 +1,0 @@
-app.c:100:5:main	56	static
-app.c:171:13:AppTaskStart	32	static
-app.c:223:13:AppObjCreate	24	static
-app.c:261:14:AppTaskCreate	56	static
-app.c:301:6:AppTaskLED	80	static
-app.c:400:13:AppTaskCom	136	static

@@ -31,8 +31,10 @@
 #define  APP_CFG_TASK_START_PRIO  		2u
 #define  APP_CFG_TASK_COM_PRIO     		10u
 #define  APP_CFG_TASK_LED_PRIO     		10u
+#define  APP_CFG_TASK_XYTest_PRIO     10u
 
-#define  APP_CFG_TASK_LED_STK_SIZE 		256u
+#define  APP_CFG_TASK_LED_STK_SIZE 			256u
+#define  APP_CFG_TASK_XYTest_STK_SIZE 	256u
 
 /*********************************************************** TASK STACK SIZES */
 #define  APP_CFG_TASK_START_STK_SIZE 	256u

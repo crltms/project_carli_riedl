@@ -45,9 +45,8 @@ static  void  BSP_IntHandler_PWM_P1_3 (void);
 extern OS_Q         UART_ISR;
 // Memory Block
 extern OS_MEM       Mem_Partition;
-OS_TCB   AppTaskLED1TCB;
-
-uint8_t dir = 2;
+// Semaphores
+extern OS_SEM				XYTest_sem;
 
 /****************************************************************** FUNCTIONS */
 /**
@@ -159,130 +158,11 @@ void  BSP_IntInit (void)
 
 static  void  BSP_IntHandler_PWM_P1_3 (void)
 {
-	static int lowhigh = 0;
-  uint8_t reg_val = 0x01;
-	uint8_t recv = 0;
-  int x = 0;
-  int end1, end2, end3, end4;
+	OS_ERR             err;
+	OSSemPost(&XYTest_sem  , OS_OPT_POST_1, &err);
+	if (err != OS_ERR_NONE)
+		APP_TRACE_DBG ("Error OSSemPost: BSP_IntHandler_CCU4\n");
 
-  if(XMC_GPIO_GetInput(D5) == 1)  // y-Achse MinusRichtung
-    end1 = 1;
-  else
-    end1 = 0;
-
-  if(XMC_GPIO_GetInput(D6) == 1)  // y-Achse PlusRichtung
-    end2 = 1;
-  else
-    end2 = 0;
-
-  if(XMC_GPIO_GetInput(D7) == 1)  // x-Achse MinusRichtung
-    end3 = 1;
-  else
-    end3 = 0;
-
-  if(XMC_GPIO_GetInput(D8) == 1)  // x-Achse PlusRichtung
-    end4 = 1;
-  else
-    end4 = 0;
-  //if((end1 == 0)&&(end2 == 0)&&(end3 == 0)&&(end4 == 0))
-  //if((end1 == 0)||(end2 == 0)||(end3 == 0)||(end4 == 0))
-  // if((XMC_GPIO_GetInput(D5) == 0)&&(XMC_GPIO_GetInput(D6) == 0)&&(XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D8) == 0))
-	if(dir == 0) // y-Minusichtung
-	{
-		if(end1 == 1)
-		{
-			if(lowhigh == 0)
-	    {
-	      reg_val = 0x00;
-	      lowhigh = 1;
-	      _mcp23s08_reset_ss(MCP23S08_SS);
-	      _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-	      _mcp23s08_set_ss(MCP23S08_SS);
-	    }
-	    else
-	    {
-	      reg_val = 0x02;
-	      lowhigh = 0;
-	      _mcp23s08_reset_ss(MCP23S08_SS);
-	      _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-	      _mcp23s08_set_ss(MCP23S08_SS);
-    	}
-		}
-		else
-			dir = 1;
-	}
-	if(dir == 1) // y-Plusrichtung
-	{
-		if(end2 == 1)
-		{
-			if(lowhigh == 0)
-			{
-				reg_val = 0x01;
-				lowhigh = 1;
-				_mcp23s08_reset_ss(MCP23S08_SS);
-				_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-				_mcp23s08_set_ss(MCP23S08_SS);
-			}
-			else
-			{
-				reg_val = 0x03;
-				lowhigh = 0;
-				_mcp23s08_reset_ss(MCP23S08_SS);
-				_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-				_mcp23s08_set_ss(MCP23S08_SS);
-			}
-		}
-		else
-			dir = 2;
-	}
-	if(dir == 2) // x-Minusrichtung
-	{
-		if(end3 == 1)
-		{
-			if(lowhigh == 0)
-			{
-				reg_val = 0x00;
-				lowhigh = 1;
-				_mcp23s08_reset_ss(MCP23S08_SS);
-				_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-				_mcp23s08_set_ss(MCP23S08_SS);
-			}
-			else
-			{
-				reg_val = 0x08;
-				lowhigh = 0;
-				_mcp23s08_reset_ss(MCP23S08_SS);
-				_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-				_mcp23s08_set_ss(MCP23S08_SS);
-			}
-		}
-		else
-			dir = 3;
-	}
-	if(dir == 3) // x-plusrichtung
-	{
-		if(end4 == 1)
-		{
-			if(lowhigh == 0)
-			{
-				reg_val = 0x04;
-				lowhigh = 1;
-				_mcp23s08_reset_ss(MCP23S08_SS);
-				_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-				_mcp23s08_set_ss(MCP23S08_SS);
-			}
-			else
-			{
-				reg_val = 0x0c;
-				lowhigh = 0;
-				_mcp23s08_reset_ss(MCP23S08_SS);
-				_mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-				_mcp23s08_set_ss(MCP23S08_SS);
-			}
-		}
-		else
-			dir = 0;
-	}
 	// if(dir == 2) // x-Minusrichtung
 	// {
 	//

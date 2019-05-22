@@ -64,6 +64,9 @@ static  OS_TCB   AppTaskLEDTCB;
 static  CPU_STK  AppTaskComStk[APP_CFG_TASK_COM_STK_SIZE];
 static  OS_TCB   AppTaskComTCB;
 
+static  CPU_STK  AppTaskXYTestStk[APP_CFG_TASK_COM_STK_SIZE];
+static  OS_TCB   AppTaskXYTestTCB;
+
 // Memory Block                                                           // <2>
 OS_MEM      Mem_Partition;
 CPU_CHAR    MyPartitionStorage[NUM_MSG - 1][MAX_MSG_LENGTH];
@@ -71,13 +74,17 @@ CPU_CHAR    MyPartitionStorage[NUM_MSG - 1][MAX_MSG_LENGTH];
 OS_Q        UART_ISR;
 OS_Q        DUTY_QUEUE;
 
+OS_SEM      XYTest_sem;
+
 /****************************************************** FILE LOCAL PROTOTYPES */
 static  void AppTaskStart (void  *p_arg);
 static  void AppTaskCreate (void);
 static  void AppObjCreate (void);
 static  void AppTaskCom (void  *p_arg);
 static  void AppTaskLED (void  *p_arg);
+static  void AppTaskXYTest (void  *p_arg);
 
+uint8_t dir = 0;
 /* Only for testing with logic analyzer --> how long is the LedTask executing
 const XMC_GPIO_CONFIG_t  config_PortOut	=
 {
@@ -249,6 +256,10 @@ static void AppObjCreate (void)
         (OS_ERR   *) &err);
   if (err != OS_ERR_NONE)
     APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
+
+  OSSemCreate(& XYTest_sem, "XYTest_sem", 0, &err);
+  if (err != OS_ERR_NONE)
+      APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 }
 
 /*************************************************** Create Application Tasks */
@@ -296,8 +307,162 @@ static void  AppTaskCreate (void)
            (OS_ERR     *) &err);
   if (err != OS_ERR_NONE)
     APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate(LED)\n");
+
+  OSTaskCreate ( (OS_TCB     *) &AppTaskXYTestTCB,
+           (CPU_CHAR   *) "TaskXYTest",
+           (OS_TASK_PTR) AppTaskXYTest,
+           (void       *) 0,
+           (OS_PRIO) APP_CFG_TASK_XYTest_PRIO,
+           (CPU_STK    *) &AppTaskXYTestStk[0],
+           (CPU_STK_SIZE) APP_CFG_TASK_XYTest_STK_SIZE / 10u,
+           (CPU_STK_SIZE) APP_CFG_TASK_XYTest_STK_SIZE,
+           (OS_MSG_QTY) 0u,
+           (OS_TICK) 0u,
+           (void       *) 0,
+           (OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+           (OS_ERR     *) &err);
+  if (err != OS_ERR_NONE)
+    APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate(XYTest)\n");
 }
 
+void AppTaskXYTest(void *p_arg)
+{
+  void        *errmem = NULL;
+  OS_ERR      err;
+  CPU_TS      ts;
+  void        *p_msg;
+  OS_MSG_SIZE msg_size;
+
+  static int lowhigh = 0;
+  uint8_t reg_val = 0x00;
+  uint8_t recv = 0;
+  int end1, end2, end3, end4;
+
+  while(DEF_TRUE)
+  {
+    OSSemPend(&XYTest_sem, 0, OS_OPT_PEND_BLOCKING, &ts,&err);
+    if ((err != OS_ERR_NONE))
+        APP_TRACE_DBG ("Error OSSemPend: AppTaskXYTest\n");
+
+    if(XMC_GPIO_GetInput(D5) == 1)  // y-Achse MinusRichtung
+      end1 = 1;
+    else
+      end1 = 0;
+
+    if(XMC_GPIO_GetInput(D6) == 1)  // y-Achse PlusRichtung
+      end2 = 1;
+    else
+      end2 = 0;
+
+    if(XMC_GPIO_GetInput(D7) == 1)  // x-Achse MinusRichtung
+      end3 = 1;
+    else
+      end3 = 0;
+
+    if(XMC_GPIO_GetInput(D8) == 1)  // x-Achse PlusRichtung
+      end4 = 1;
+    else
+      end4 = 0;
+
+    // XY Abfahren
+    if(dir == 0) // y-Minusichtung
+    {
+      if(end1 == 1)
+      {
+        if(lowhigh == 0)
+        {
+          reg_val = 0x00;
+          lowhigh = 1;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+        else
+        {
+          reg_val = 0x02;
+          lowhigh = 0;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+      }
+      else
+        dir = 1;
+    }
+    if(dir == 1) // y-Plusrichtung
+    {
+      if(end2 == 1)
+      {
+        if(lowhigh == 0)
+        {
+          reg_val = 0x01;
+          lowhigh = 1;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+        else
+        {
+          reg_val = 0x03;
+          lowhigh = 0;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+      }
+      else
+        dir = 2;
+    }
+    if(dir == 2) // x-Minusrichtung
+    {
+      if(end3 == 1)
+      {
+        if(lowhigh == 0)
+        {
+          reg_val = 0x00;
+          lowhigh = 1;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+        else
+        {
+          reg_val = 0x08;
+          lowhigh = 0;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+      }
+      else
+        dir = 3;
+    }
+    if(dir == 3) // x-plusrichtung
+    {
+      if(end4 == 1)
+      {
+        if(lowhigh == 0)
+        {
+          reg_val = 0x04;
+          lowhigh = 1;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+        else
+        {
+          reg_val = 0x0c;
+          lowhigh = 0;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+        }
+      }
+      else
+        dir = 5;
+    }
+  }
+}
 void AppTaskLED(void *p_arg)
 {
   void        *errmem = NULL;
