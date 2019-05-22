@@ -1,0 +1,17 @@
+usbd_endpoint_xmc4000.h:140:20:Endpoint_SelectEndpoint	16	static
+usbd_endpoint_xmc4000.h:155:20:Endpoint_IsSETUPReceived	4	static
+usbd_endpoint_xmc4000.h:170:20:Endpoint_ClearSETUP	4	static
+usbd_endpoint_xmc4000.h:179:20:Endpoint_ClearStatusStage	4	static
+usbd_endpoint_xmc4000.h:193:20:Endpoint_IsINReady	16	static
+usbd_endpoint_xmc4000.h:208:20:Endpoint_IsOUTReceived	16	static
+usbd_endpoint_xmc4000.h:235:24:Endpoint_BytesInEndpoint	16	static
+olb_class_device.c:89:1:OLB_Device_ProcessControlRequest	16	static
+olb_class_device.c:181:1:OLB_Device_ConfigureEndpoints	24	static
+olb_class_device.c:214:1:OLB_Device_USBTask	16	static
+olb_class_device.c:229:1:CDC_Device_SendString	24	static
+olb_class_device.c:246:1:CDC_Device_SendData	32	static
+olb_class_device.c:262:1:CDC_Device_SendByte	24	static
+olb_class_device.c:287:1:OLB_Device_Flush	24	static
+olb_class_device.c:306:1:OLB_Device_BytesReceived	24	static
+olb_class_device.c:330:1:OLB_Device_ReceiveByte	24	static
+olb_class_device.c:353:1:OLB_Device_SendControlLineStateChange	24	static

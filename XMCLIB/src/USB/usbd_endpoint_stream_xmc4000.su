@@ -1,0 +1,10 @@
+usbd_endpoint_stream_xmc4000.c:79:9:Endpoint_Write_Stream_LE	40	static
+usbd_endpoint_stream_xmc4000.c:125:6:SwapCopy	32	static
+usbd_endpoint_stream_xmc4000.c:134:9:Endpoint_Write_Stream_BE	40	static
+usbd_endpoint_stream_xmc4000.c:179:9:Endpoint_Read_Stream_LE	40	static
+usbd_endpoint_stream_xmc4000.c:225:9:Endpoint_Read_Stream_BE	40	static
+usbd_endpoint_stream_xmc4000.c:270:9:Endpoint_Write_Control_Stream_LE	24	static
+usbd_endpoint_stream_xmc4000.c:293:9:Endpoint_Write_Control_Stream_BE	16	static
+usbd_endpoint_stream_xmc4000.c:299:9:Endpoint_Read_Control_Stream_LE	24	static
+usbd_endpoint_stream_xmc4000.c:322:9:Endpoint_Read_Control_Stream_BE	16	static
+usbd_endpoint_stream_xmc4000.c:327:9:Endpoint_Null_Stream	32	static

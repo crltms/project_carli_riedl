@@ -1,0 +1,15 @@
+xmc_dsd.c:72:6:XMC_DSD_Enable	16	static
+xmc_dsd.c:85:6:XMC_DSD_Disable	16	static
+xmc_dsd.c:99:6:XMC_DSD_EnableClock	16	static
+xmc_dsd.c:108:6:XMC_DSD_DisableClock	16	static
+xmc_dsd.c:121:6:XMC_DSD_Init	16	static
+xmc_dsd.c:128:6:XMC_DSD_IsEnabled	24	static
+xmc_dsd.c:165:6:XMC_DSD_Generator_Init	16	static
+xmc_dsd.c:177:18:XMC_DSD_CH_Init	24	static
+xmc_dsd.c:215:6:XMC_DSD_CH_MainFilter_Init	24	static
+xmc_dsd.c:249:6:XMC_DSD_CH_Timestamp_Init	24	static
+xmc_dsd.c:262:6:XMC_DSD_CH_AuxFilter_Init	24	static
+xmc_dsd.c:278:6:XMC_DSD_CH_Integrator_Init	24	static
+xmc_dsd.c:301:6:XMC_DSD_CH_Rectify_Init	16	static
+xmc_dsd.c:313:6:XMC_DSD_CH_GetResult_TS	32	static
+xmc_dsd.c:329:6:XMC_DSD_CH_GetResult_TS_Time	40	static

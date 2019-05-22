@@ -1,0 +1,2 @@
+xmc4_usic.c:65:6:XMC_USIC_Enable	16	static
+xmc4_usic.c:102:6:XMC_USIC_Disable	16	static

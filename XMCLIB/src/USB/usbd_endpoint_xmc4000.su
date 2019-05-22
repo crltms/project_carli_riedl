@@ -1,0 +1,16 @@
+core_cm4.h:1467:22:NVIC_EnableIRQ	16	static
+core_cm4.h:1480:22:NVIC_DisableIRQ	16	static
+usbd_endpoint_xmc4000.h:193:20:Endpoint_IsINReady	16	static
+usbd_endpoint_xmc4000.h:208:20:Endpoint_IsOUTReceived	16	static
+usbd_endpoint_xmc4000.h:220:23:Endpoint_GetEndpointDirection	16	static
+usbd_endpoint_xmc4000.h:316:20:Endpoint_IsStalled	16	static
+usbd_device_xmc4000.h:88:24:USB_Device_GetFrameNumber	8	static
+usbd_endpoint_xmc4000.c:81:9:Endpoint_WaitUntilReady	16	static
+usbd_endpoint_xmc4000.c:124:6:Endpoint_ClearOUT	16	static
+usbd_endpoint_xmc4000.c:143:6:Endpoint_ClearIN	16	static
+usbd_endpoint_xmc4000.c:165:6:Endpoint_IsReadWriteAllowed	16	static
+usbd_endpoint_xmc4000.c:179:6:Endpoint_Write_8	24	static
+usbd_endpoint_xmc4000.c:194:9:Endpoint_Read_8	16	static
+usbd_endpoint_xmc4000.c:212:6:Endpoint_Write_32_LE	24	static
+usbd_endpoint_xmc4000.c:228:10:Endpoint_Read_32_LE	24	static
+usbd_endpoint_xmc4000.c:246:6:Endpoint_ConfigureEndpointTable	32	static

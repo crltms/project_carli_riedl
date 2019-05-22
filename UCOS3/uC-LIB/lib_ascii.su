@@ -1,0 +1,16 @@
+lib_ascii.c:156:14:ASCII_IsAlpha	24	static
+lib_ascii.c:186:14:ASCII_IsAlphaNum	24	static
+lib_ascii.c:216:14:ASCII_IsLower	24	static
+lib_ascii.c:246:14:ASCII_IsUpper	24	static
+lib_ascii.c:276:14:ASCII_IsDig	24	static
+lib_ascii.c:305:14:ASCII_IsDigOct	24	static
+lib_ascii.c:335:14:ASCII_IsDigHex	24	static
+lib_ascii.c:368:14:ASCII_IsBlank	24	static
+lib_ascii.c:402:14:ASCII_IsSpace	24	static
+lib_ascii.c:436:14:ASCII_IsPrint	24	static
+lib_ascii.c:470:14:ASCII_IsGraph	24	static
+lib_ascii.c:500:14:ASCII_IsPunct	24	static
+lib_ascii.c:534:14:ASCII_IsCtrl	24	static
+lib_ascii.c:572:11:ASCII_ToLower	24	static
+lib_ascii.c:610:11:ASCII_ToUpper	24	static
+lib_ascii.c:641:14:ASCII_Cmp	24	static

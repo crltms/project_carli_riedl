@@ -1,0 +1,9 @@
+xmc_fce.c:62:18:XMC_FCE_Init	16	static
+xmc_fce.c:71:6:XMC_FCE_Disable	8	static
+xmc_fce.c:78:6:XMC_FCE_Enable	8	static
+xmc_fce.c:85:18:XMC_FCE_CalculateCRC8	32	static
+xmc_fce.c:114:18:XMC_FCE_CalculateCRC16	32	static
+xmc_fce.c:147:18:XMC_FCE_CalculateCRC32	32	static
+xmc_fce.c:181:6:XMC_FCE_TriggerMismatch	16	static
+xmc_fce.c:190:6:CRC_LittleEndian16bit	32	static
+xmc_fce.c:217:6:CRC_LittleEndian32bit	32	static

@@ -1,0 +1,6 @@
+xmc_gpio.h:290:22:XMC_GPIO_SetOutputHigh	16	static
+xmc_gpio.h:316:22:XMC_GPIO_SetOutputLow	16	static
+mcp23s08_drv.c:22:9:_mcp23s08_reset_ss	16	static
+mcp23s08_drv.c:37:9:_mcp23s08_set_ss	16	static
+mcp23s08_drv.c:51:9:_mcp23s08_reset	8	static
+mcp23s08_drv.c:67:9:_mcp23s08_reg_xfer	24	static

@@ -1,0 +1,9 @@
+os_q.c:73:7:OSQCreate	32	static
+os_q.c:398:8:OSQPend	64	static
+os_q.c:612:13:OSQPendAbort	48	static
+os_q.c:745:7:OSQPost	40	static
+os_q.c:846:7:OS_QClr	16	static
+os_q.c:878:7:OS_QDbgListAdd	16	static
+os_q.c:893:7:OS_QDbgListRemove	24	static
+os_q.c:940:7:OS_QInit	16	static
+os_q.c:997:7:OS_QPost	56	static

@@ -1,0 +1,12 @@
+xmc_common.h:218:25:XMC_PRIOARRAY_GetHead	16	static
+xmc_common.h:236:25:XMC_PRIOARRAY_GetItemPriority	16	static
+xmc_common.h:245:25:XMC_PRIOARRAY_GetItemNext	16	static
+xmc_common.c:71:6:XMC_LIST_Init	16	static
+xmc_common.c:76:7:XMC_LIST_GetHead	16	static
+xmc_common.c:81:7:XMC_LIST_GetTail	24	static
+xmc_common.c:100:6:XMC_LIST_Add	24	static
+xmc_common.c:117:6:XMC_LIST_Remove	24	static
+xmc_common.c:146:6:XMC_LIST_Insert	24	static
+xmc_common.c:160:6:XMC_PRIOARRAY_Init	16	static
+xmc_common.c:176:6:XMC_PRIOARRAY_Add	32	static
+xmc_common.c:199:6:XMC_PRIOARRAY_Remove	24	static

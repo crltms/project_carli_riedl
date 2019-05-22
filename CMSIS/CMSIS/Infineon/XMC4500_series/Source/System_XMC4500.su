@@ -1,0 +1,3 @@
+System_XMC4500.c:218:6:SystemInit	16	static
+System_XMC4500.c:293:6:SystemCoreClockUpdate	24	static
+System_XMC4500.c:349:12:SystemClockSetup	16	static

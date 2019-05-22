@@ -1,0 +1,2 @@
+clock_xmc4.c:70:20:CLOCK_XMC4_GetAppVersion	16	static
+clock_xmc4.c:81:10:OSCHP_GetFrequency	4	static

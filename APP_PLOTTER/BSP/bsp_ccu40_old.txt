@@ -1,0 +1,133 @@
+
+/*
+ * tio_delay.c
+ *
+ *  Created on: DD-MM-YYYY
+ *      Author: YourName
+ */
+/*********************************************************************** LIBS */
+
+#include <bsp_ccu4.h>
+
+/******************************************************************** DEFINES */
+
+
+/****************************************************************** FUNCTIONS */
+/*!
+*  @brief TODO ???
+*  @param TODO ???
+*  @return TODO ???
+*/
+/*!
+*  @brief TODO ???
+*  @param TODO ???
+*  @return TODO ???
+*/
+
+/*********************************************************************************************************************
+  * GLOBAL DATA
+********************************************************************************************************************/
+#define LED2 P1_0
+#define LED1 P1_1
+#define PWM_PERIOD_VALUE 29296      // 1 sek. --> clock frequency / 2^12 = 29296 --> period of 1sec.
+#define PWM_DEF_COMP_VALUE 14648    // 0.5 sek. --> (clock frequency / 2^12) = 14648 --> count until this value and reset output --> 0.5sec.
+
+
+XMC_CCU4_SLICE_COMPARE_CONFIG_t g_timer_object =
+{
+  .timer_mode 		     = XMC_CCU4_SLICE_TIMER_COUNT_MODE_EA,
+  .monoshot   		     = false,
+  .shadow_xfer_clear   = 0U,
+  .dither_timer_period = 0U,
+  .dither_duty_cycle   = 0U,
+  .prescaler_mode	     = XMC_CCU4_SLICE_PRESCALER_MODE_NORMAL,
+  .mcm_enable		       = 0U,
+  .prescaler_initval   = 12U,     // divide clock frequency by 2^12
+  .float_limit		     = 0U,
+  .dither_limit		     = 0U,
+  .passive_level 	     = XMC_CCU4_SLICE_OUTPUT_PASSIVE_LEVEL_LOW,
+  .timer_concatenation = 0U
+};
+
+/*
+ * GPIO Related configuration for PWM output
+ */
+const XMC_GPIO_CONFIG_t  PWM_0_gpio_out_config	=
+{
+  .mode                = XMC_GPIO_MODE_OUTPUT_PUSH_PULL_ALT3,
+  .output_level        = XMC_GPIO_OUTPUT_LEVEL_LOW,
+	.output_strength     = XMC_GPIO_OUTPUT_STRENGTH_MEDIUM,
+};
+
+_Bool BSP_ConfigCCU4_Timer(void)
+{
+
+  XMC_CCU4_Init(MODULE_PTR_CCU40, XMC_CCU4_SLICE_MCMS_ACTION_TRANSFER_PR_CR);
+  /* Start the prescaler and restore clocks to slices */
+  XMC_CCU4_StartPrescaler(MODULE_PTR_CCU40);
+  /* Start of CCU4 configurations *//* Ensure fCCU reaches CCU4 */
+  XMC_CCU4_SetModuleClock(MODULE_PTR_CCU40, XMC_CCU4_CLOCK_SCU);
+
+
+  /* Initialize the Slice */
+  XMC_CCU4_SLICE_CompareInit(SLICE_PTR_CCU40_CC43, &g_timer_object);
+  XMC_CCU4_SLICE_CompareInit(SLICE_PTR_CCU40_CC42, &g_timer_object);
+
+  /* Program duty cycle = 33.33% at 1Hz frequency */
+  // XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE3_PTR, comparevalue[count]);
+  XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC43, PWM_PERIOD_VALUE);
+  XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC42, PWM_PERIOD_VALUE);
+  XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC43, PWM_DEF_COMP_VALUE);
+  XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC42, PWM_DEF_COMP_VALUE);
+  /* Enable shadow transfer */
+  // XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, (uint32_t)(XMC_CCU4_SHADOW_TRANSFER_SLICE_0|XMC_CCU4_SHADOW_TRANSFER_PRESCALER_SLICE_0));
+  XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_3);
+    XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_2);
+  /* Enable External Start to Event 0 */
+  XMC_CCU4_SLICE_StartConfig(SLICE_PTR_CCU40_CC43, XMC_CCU4_SLICE_EVENT_0, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
+  XMC_CCU4_SLICE_StartConfig(SLICE_PTR_CCU40_CC42, XMC_CCU4_SLICE_EVENT_0, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
+  /* Enable compare match events */
+  XMC_CCU4_SLICE_EnableEvent(SLICE_PTR_CCU40_CC43, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP);
+  XMC_CCU4_SLICE_EnableEvent(SLICE_PTR_CCU40_CC42, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP);
+  /* Connect compare match event to SR0 */
+  XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC43, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_3);
+    XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC42, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_2);
+  /* Set NVIC priority */
+  NVIC_SetPriority(CCU40_3_IRQn, 3U);
+  NVIC_SetPriority(CCU40_2_IRQn, 2U);
+  /* Enable IRQ */
+  NVIC_EnableIRQ(CCU40_3_IRQn);
+  NVIC_EnableIRQ(CCU40_2_IRQn);
+  /* Enable CCU4 PWM output */
+  XMC_GPIO_Init(LED2, &PWM_0_gpio_out_config);
+  XMC_GPIO_Init(LED1, &PWM_0_gpio_out_config);
+  /* Get the slice out of idle mode */
+  XMC_CCU4_EnableClock(MODULE_PTR_CCU40, SLICE_NUMBER_CCU40_CC43);
+  XMC_CCU4_EnableClock(MODULE_PTR_CCU40, SLICE_NUMBER_CCU40_CC42);
+  /* Start timer*/
+  XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC43);
+  XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC42);
+
+  return true;
+}
+
+_Bool BSP_PWM_SetDutyCycle(int led, uint16_t dutycycle)
+{
+	uint32_t period = PWM_PERIOD_VALUE;
+  uint32_t compare = 0;
+
+  compare = (100-dutycycle)*(period+1)/100; // --> from page 15 of AP32287-XMC1000_XMC4000-Capture Compare Unit 4 (CCU4).pdf
+  if(led ==1)
+  {
+    XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC42, (uint16_t)compare);
+    XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_2);
+  }
+  if(led == 2)
+  {
+    XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC43, (uint16_t)compare);
+    XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_3);
+  }
+
+	return true;
+}
+/*! EOF */

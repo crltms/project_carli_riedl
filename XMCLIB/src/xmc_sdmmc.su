@@ -1,0 +1,14 @@
+xmc_sdmmc.h:1407:22:XMC_SDMMC_SetDataLineTimeout	16	static
+xmc_sdmmc.c:158:6:XMC_SDMMC_GetPowerStatus	16	static
+xmc_sdmmc.c:169:6:XMC_SDMMC_Enable	16	static
+xmc_sdmmc.c:177:6:XMC_SDMMC_Disable	16	static
+xmc_sdmmc.c:185:20:XMC_SDMMC_Init	16	static
+xmc_sdmmc.c:205:6:XMC_SDMMC_EnableEventStatus	16	static
+xmc_sdmmc.c:215:6:XMC_SDMMC_DisableEventStatus	16	static
+xmc_sdmmc.c:225:6:XMC_SDMMC_EnableEvent	16	static
+xmc_sdmmc.c:236:6:XMC_SDMMC_DisableEvent	16	static
+xmc_sdmmc.c:246:6:XMC_SDMMC_ClearEvent	16	static
+xmc_sdmmc.c:256:6:XMC_SDMMC_GetEvent	24	static
+xmc_sdmmc.c:276:6:XMC_SDMMC_GetR2Response	16	static
+xmc_sdmmc.c:287:20:XMC_SDMMC_SendCommand	24	static
+xmc_sdmmc.c:298:6:XMC_SDMMC_SetDataTransferMode	16	static

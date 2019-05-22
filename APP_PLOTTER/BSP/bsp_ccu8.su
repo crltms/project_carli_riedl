@@ -1,0 +1,8 @@
+core_cm4.h:1467:22:NVIC_EnableIRQ	16	static
+core_cm4.h:1550:22:NVIC_SetPriority	16	static
+xmc_ccu8.h:864:22:XMC_CCU8_StartPrescaler	16	static
+xmc_ccu8.h:985:22:XMC_CCU8_EnableClock	16	static
+xmc_ccu8.h:1517:22:XMC_CCU8_SLICE_StartTimer	16	static
+xmc_ccu8.h:2085:22:XMC_CCU8_SLICE_EnableEvent	16	static
+bsp_ccu8.c:83:7:BSP_ConfigCCU8_Timer	8	static
+bsp_ccu8.c:151:7:BSP_PWM_SetDutyCycle_CCU80	24	static

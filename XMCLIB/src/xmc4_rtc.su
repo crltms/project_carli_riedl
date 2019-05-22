@@ -1,0 +1,9 @@
+xmc_rtc.h:623:22:XMC_RTC_IsRunning	4	static
+xmc_scu.h:537:26:XMC_SCU_GetMirrorStatus	4	static
+xmc4_rtc.c:66:6:XMC_RTC_Enable	8	static
+xmc4_rtc.c:74:6:XMC_RTC_Disable	4	static
+xmc4_rtc.c:85:6:XMC_RTC_IsEnabled	8	static
+xmc4_rtc.c:93:18:XMC_RTC_Init	16	static
+xmc4_rtc.c:134:6:XMC_RTC_EnableEvent	16	static
+xmc4_rtc.c:146:6:XMC_RTC_DisableEvent	16	static
+xmc4_rtc.c:158:6:XMC_RTC_ClearEvent	16	static

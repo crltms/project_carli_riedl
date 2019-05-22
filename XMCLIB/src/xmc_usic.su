@@ -1,0 +1,10 @@
+xmc_usic.c:71:6:XMC_USIC_CH_Enable	16	static
+xmc_usic.c:106:6:XMC_USIC_CH_Disable	16	static
+xmc_usic.c:111:22:XMC_USIC_CH_SetBaudrate	64	static
+xmc_usic.c:171:6:XMC_USIC_CH_TXFIFO_Configure	24	static
+xmc_usic.c:193:6:XMC_USIC_CH_RXFIFO_Configure	24	static
+xmc_usic.c:213:6:XMC_USIC_CH_TXFIFO_SetSizeTriggerLimit	24	static
+xmc_usic.c:229:6:XMC_USIC_CH_RXFIFO_SetSizeTriggerLimit	24	static
+xmc_usic.c:243:6:XMC_USIC_CH_SetInterruptNodePointer	24	static
+xmc_usic.c:251:6:XMC_USIC_CH_TXFIFO_SetInterruptNodePointer	24	static
+xmc_usic.c:259:6:XMC_USIC_CH_RXFIFO_SetInterruptNodePointer	24	static

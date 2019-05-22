@@ -1,0 +1,11 @@
+xmc_scu.h:537:26:XMC_SCU_GetMirrorStatus	4	static
+xmc_rtc.c:90:6:XMC_RTC_Start	8	static
+xmc_rtc.c:102:6:XMC_RTC_Stop	8	static
+xmc_rtc.c:114:6:XMC_RTC_SetPrescaler	16	static
+xmc_rtc.c:129:6:XMC_RTC_SetTime	16	static
+xmc_rtc.c:165:6:XMC_RTC_GetTime	16	static
+xmc_rtc.c:174:6:XMC_RTC_GetTimeStdFormat	24	static
+xmc_rtc.c:192:6:XMC_RTC_SetAlarm	16	static
+xmc_rtc.c:227:6:XMC_RTC_GetAlarm	16	static
+xmc_rtc.c:237:6:XMC_RTC_GetAlarmStdFormat	24	static
+xmc_rtc.c:255:10:XMC_RTC_GetEventStatus	4	static
