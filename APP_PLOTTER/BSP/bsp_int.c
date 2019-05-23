@@ -39,14 +39,14 @@ static uint8_t  End_of_Packet  = '$';                        /* in ASCII '$' */
 /****************************************************** FILE LOCAL PROTOTYPES */
 static  void  BSP_IntHandler (CPU_DATA  int_id);
 static  void  BSP_IntHandler_Uart_Recive (void);
-static  void  BSP_IntHandler_PWM_P1_3 (void);
+static  void  BSP_IntHandler_PWM_XY(void);
 
 // Message Queues
 extern OS_Q         UART_ISR;
 // Memory Block
 extern OS_MEM       Mem_Partition;
 // Semaphores
-extern OS_SEM				XYTest_sem;
+extern OS_SEM				XYTEST_SEM;
 
 /****************************************************************** FUNCTIONS */
 /**
@@ -145,7 +145,7 @@ void  BSP_IntInit (void)
 {
 	BSP_IntVectSet (USIC1_1_IRQn, BSP_IntHandler_Uart_Recive); //**
 	BSP_IntVectSet (USIC1_0_IRQn, BSP_IntHandler_Uart_Recive); //**
-	BSP_IntVectSet (CCU40_0_IRQn, BSP_IntHandler_PWM_P1_3); //**
+	//BSP_IntVectSet (CCU40_1_IRQn, BSP_IntHandler_PWM_XY); //**
 }
 
 /**
@@ -156,10 +156,10 @@ void  BSP_IntInit (void)
  *           https://doc.micrium.com/display/osiiidoc/Keeping+the+Data+in+Scope
  */
 
-static  void  BSP_IntHandler_PWM_P1_3 (void)
+static  void  BSP_IntHandler_PWM_XY (void)
 {
 	OS_ERR             err;
-	OSSemPost(&XYTest_sem  , OS_OPT_POST_1, &err);
+	OSSemPost(&XYTEST_SEM  , OS_OPT_POST_1, &err);
 	if (err != OS_ERR_NONE)
 		APP_TRACE_DBG ("Error OSSemPost: BSP_IntHandler_CCU4\n");
 

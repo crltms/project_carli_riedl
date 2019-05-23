@@ -74,7 +74,7 @@ CPU_CHAR    MyPartitionStorage[NUM_MSG - 1][MAX_MSG_LENGTH];
 OS_Q        UART_ISR;
 OS_Q        DUTY_QUEUE;
 
-OS_SEM      XYTest_sem;
+OS_SEM      XYTEST_SEM;
 
 /****************************************************** FILE LOCAL PROTOTYPES */
 static  void AppTaskStart (void  *p_arg);
@@ -114,11 +114,7 @@ int main (void)
   BSP_IntEn (BSP_INT_ID_USIC1_01); //**
   BSP_IntEn (BSP_INT_ID_USIC1_00); //**
   BSP_IntEn (BSP_INT_ID_CCU40_00); //** PORT 1.3
-  // BSP_IntEn (BSP_INT_ID_CCU40_02); //** LED1 P1_1
-  // BSP_IntEn (BSP_INT_ID_CCU80_00); //** PORT 0_5
-  // BSP_IntEn (BSP_INT_ID_CCU80_02); //** PORT 0_10
-  // BSP_IntEn (BSP_INT_ID_CCU80_03); //** PORT 0_9
-  //XMC_GPIO_Init(P1_11, &config_PortOut);
+  BSP_IntEn (BSP_INT_ID_CCU40_01); //** FOR MOTOR
 // init SEMI Hosting DEBUG Support                                        // <4>
 #if SEMI_HOSTING
   initRetargetSwo();
@@ -257,7 +253,7 @@ static void AppObjCreate (void)
   if (err != OS_ERR_NONE)
     APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 
-  OSSemCreate(& XYTest_sem, "XYTest_sem", 0, &err);
+  OSSemCreate(& XYTEST_SEM, "XYTest_sem", 0, &err);
   if (err != OS_ERR_NONE)
       APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 }
@@ -337,10 +333,10 @@ void AppTaskXYTest(void *p_arg)
   uint8_t reg_val = 0x00;
   uint8_t recv = 0;
   int end1, end2, end3, end4;
-
+  int steps, rounds;
   while(DEF_TRUE)
   {
-    OSSemPend(&XYTest_sem, 0, OS_OPT_PEND_BLOCKING, &ts,&err);
+    OSSemPend(&XYTEST_SEM, 0, OS_OPT_PEND_BLOCKING, &ts,&err);
     if ((err != OS_ERR_NONE))
         APP_TRACE_DBG ("Error OSSemPend: AppTaskXYTest\n");
 
@@ -365,101 +361,111 @@ void AppTaskXYTest(void *p_arg)
       end4 = 0;
 
     // XY Abfahren
-    if(dir == 0) // y-Minusichtung
+    if((dir == 0)||(dir == 1)||(dir == 2)||(dir == 3))
     {
-      if(end1 == 1)
+      if(steps <= 200)
+        steps++;
+      else
       {
-        if(lowhigh == 0)
+        steps = 0;
+        rounds++;
+      }
+      if(dir == 0) // y-Minusichtung
+      {
+        if(end1 == 1)
         {
-          reg_val = 0x00;
-          lowhigh = 1;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
+          if(lowhigh == 0)
+          {
+            reg_val = 0x00;
+            lowhigh = 1;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,Y_MINUS_PLOT_LOW,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
+          else
+          {
+            reg_val = 0x02;
+            lowhigh = 0;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,Y_MINUS_PLOT_HIGH,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
         }
         else
-        {
-          reg_val = 0x02;
-          lowhigh = 0;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-        }
+          dir = 1;
       }
-      else
-        dir = 1;
-    }
-    if(dir == 1) // y-Plusrichtung
-    {
-      if(end2 == 1)
+      if(dir == 1) // y-Plusrichtung
       {
-        if(lowhigh == 0)
+        if(end2 == 1)
         {
-          reg_val = 0x01;
-          lowhigh = 1;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
+          if(lowhigh == 0)
+          {
+            reg_val = 0x01;
+            lowhigh = 1;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,Y_PLUS_PLOT_LOW,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
+          else
+          {
+            reg_val = 0x03;
+            lowhigh = 0;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,Y_PLUS_PLOT_HIGH,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
         }
         else
-        {
-          reg_val = 0x03;
-          lowhigh = 0;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-        }
+          dir = 2;
       }
-      else
-        dir = 2;
-    }
-    if(dir == 2) // x-Minusrichtung
-    {
-      if(end3 == 1)
+      if(dir == 2) // x-Minusrichtung
       {
-        if(lowhigh == 0)
+        if(end3 == 1)
         {
-          reg_val = 0x00;
-          lowhigh = 1;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
+          if(lowhigh == 0)
+          {
+            reg_val = 0x00;
+            lowhigh = 1;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,X_MINUS_PLOT_LOW,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
+          else
+          {
+            reg_val = 0x08;
+            lowhigh = 0;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,X_MINUS_PLOT_HIGH,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
         }
         else
-        {
-          reg_val = 0x08;
-          lowhigh = 0;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-        }
+          dir = 3;
       }
-      else
-        dir = 3;
-    }
-    if(dir == 3) // x-plusrichtung
-    {
-      if(end4 == 1)
+      if(dir == 3) // x-plusrichtung
       {
-        if(lowhigh == 0)
+        if(end4 == 1)
         {
-          reg_val = 0x04;
-          lowhigh = 1;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
+          if(lowhigh == 0)
+          {
+            reg_val = 0x04;
+            lowhigh = 1;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,X_PLUS_PLOT_LOW,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
+          else
+          {
+            reg_val = 0x0c;
+            lowhigh = 0;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,X_PLUS_PLOT_HIGH,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
         }
         else
-        {
-          reg_val = 0x0c;
-          lowhigh = 0;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,reg_val,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-        }
+          dir = 5;
       }
-      else
-        dir = 5;
     }
   }
 }
@@ -524,19 +530,10 @@ void AppTaskLED(void *p_arg)
       ret = BSP_PWM_SetDutyCycle(3, dutycycle);
     if(*token == '4') // Dutycycle for Port 0 Pin 9
       ret = BSP_PWM_SetDutyCycle(4, dutycycle);
+    if(*token == '5') // Dutycycle for Port 0 Pin 9
+      ret = BSP_PWM_SetDutyCycle(5, dutycycle);
     if(!ret)
       APP_TRACE_DBG ("Error returnval: AppTaskLED\n");
-
-
-
-    //
-    // _mcp23s08_reset_ss(MCP23S08_SS);
-    // _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x01,MCP23S08_WR);
-    // _mcp23s08_set_ss(MCP23S08_SS);
-    //
-    // _mcp23s08_reset_ss(MCP23S08_SS);
-  	// reg_val = _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0,MCP23S08_RD);
-  	// _mcp23s08_set_ss(MCP23S08_SS);
 
     APP_TRACE_DBG ("Led Task\n");
   }

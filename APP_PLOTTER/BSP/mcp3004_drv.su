@@ -1,5 +1,0 @@
-xmc_gpio.h:290:22:XMC_GPIO_SetOutputHigh	16	static
-xmc_gpio.h:316:22:XMC_GPIO_SetOutputLow	16	static
-mcp3004_drv.c:22:9:_mcp3004_reset_ss	16	static
-mcp3004_drv.c:37:9:_mcp3004_set_ss	16	static
-mcp3004_drv.c:52:9:_mcp3004_read_byte	24	static
