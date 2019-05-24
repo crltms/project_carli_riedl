@@ -1,0 +1,145 @@
+= Task 3: PWM
+
+This programs are made to control the dutycycle of the a two CCU4 and CCU8 Slices outputs on the XMC_4500_RELAX_KIT.
+The first program, for the XMC_4500_RELAX_KIT is in the folder APP_PWM. The second program
+which is made to control the dutycycle on the PC is in the folder PC_APP_SER.
+
+image::folder_pic_pwm.png[]
+
+== Using
+
+The first program in the folder APP_PWM has to be compiled and flashed on the XMC_4500_RELAX_KIT.
+For this step it has to be opened a terminal in this folder and the command "make flash" has to be
+written in the command shell. If the command has been executed in the correct form, the two LEDs on
+the board should be turned on. This led's should be blinking with a default dutycycle of 50%. The period
+set is 1 second. So the leds should be on for 500ms and off for 500ms. For generating the PWM-signal the CCU4-timer
+is configured in the program. It can be found in the folder APP_PWM/BSP/bsp_ccu4.c. The configuration for the CCU8-timer
+is written in the bsp_ccu8.c. It can be found in the folder APP_PWM/BSP/bsp_ccu8.c. The dutycycle can be set from 0% up to 100%.
+The second program to inc-/decrease the dutycycle is located in the folder PC_APP_SER. To execute
+the program a terminal should be opened in this folder. Afterwards the command "make" should be executed.
+This command creates a executable namend as "serial". This program can be executed with the command "./serial" from the command shell.
+This command opens a terminal where the dutycycle of the two leds (CCU4-timer) on the XMC_4500_RELAX_KIT could be configured.
+In the terminal the dutycycle of the two outputs can be set one by one.
+Use only numbers from 0 to 100! Otherwise there could be generated various unknown erros!
+The protocol that is used by GUI is the following:
+-> #100:1$
+-> # = start of frame, 100 = value of dutycycle, : = separator, 1 = led 1 / port 1.1 and 2 = led 2 / port 1.0, $ = end of frame
+-> after the seperator could be for CCU4: 1 for led 1 port 1.1, 2 for led 2 port 1.0
+-> for CCU8: 3 for port 0.5, 4 for port 0.9 or 5 for port 0.10
+
+image::config_terminal_pwm.png[]
+
+There is the possibility to write the dutycycle into the textbox. But be careful, only values between 0 and 100 are accepted!
+After writing the dutycycle into the textbox, it could be sent to the XMC4500 via clicking the right button. For example the button
+Led 1 send. After clicking this button the dutycycle of the led 1 / port 1.1 will be set to the value written in the textbox.
+Otherwise unknown errors could be generated!
+The GUI to change the dutycycle could be opened only if a serial device is connected. Otherwise it will not start and write a message
+on the command shell. If the serial interface has a other name, it is possible that the config of the serial interface has to be changed.
+This could be done by changing the portname in the file /src/gnome.c line 181 -> char *portname = "/dev/ttyUSB0";
+
+== Logic Analyzer
+
+The logic analyzer has been used to check the correctness of the dutycycle. And to check how long the program is executing the AppTaskLed.
+This means that there was measured the time from getting into the waiting -> ready -> running -> waiting state (14.5us).
+For this measurement was placed a XMC_GPIO_SetOutputHigh(..) before the OSQPend and a XMC_GPIO_SetOutputLow(..) after the OSQPend. So an ouput is reset when an
+information is recieved and set when the task has finished. The same was tried with the DAC and the oscilloscope.
+This was also tried by using the oscilloscope in the electronics labor. But for some reason it wasn't possible to measure the exact time (288us).
+With the oscilloscope is also the time measured that it takes, to set the output of the DAC to a certain value. Due to this fact, the time that the program spends
+to stay in this routine is longer than without setting a dac value.
+
+image::oscilloscope.bmp[]
+image::measurement_logicana_1.png[]
+image::Dutycycle_20_percent.png[]
+image::Dutycycle_50_percent.png[]
+image::Dutycycle_78_percent.png[]
+
+== Makefile Usage
+
+[source%nowrap, bash]
+----
+make          # build the application
+make flash    # flash the application
+make debug    # debug the application
+make erase    # erase the program memory
+make doc      # invoke doxygen
+make clean    # clean the project
+----
+
+= Manual
+
+== Building for PC
+
+[source%nowrap, bash]
+----
+gcc ./src/*.c -L/usr/lib/x86_64-linux-gnu  -lm -lusb-1.0 -I./inc/ `pkg-config --cflags --libs gtk+-3.0` --pedantic -Wall -g -std=c99 -o serial
+----
+
+This creates an executale file. This could be executed with a double click or with the command shown under point "Execute on PC".
+
+== Execute on PC
+[source%nowrap, bash]
+----
+./serial
+----
+
+== Building for XMC_4500_RELAX_KIT
+
+Open a terminal in the folder APP_PWM and write the following command into the command shell:
+
+[source%nowrap, bash]
+----
+make
+----
+
+This creates several files in the BUILD directory where you can find the
+executables (bin, elf, hex ...).
+
+== Flashing
+
+[source%nowrap, bash]
+----
+$ JLinkExe -Device XMC4500-1024 -if SWD -speed 4000
+J-LINK> h
+J-Link> loadfile BUILD/XMC_4500_RELAX_KIT/GCC_ARM/main.hex
+J-Link> r
+J-Link> g
+----
+
+== Debugging
+
+(1) Build the application with debug symbols. Therefore write the following command into the command shell:
+
+[source%nowrap, bash]
+----
+make debug
+----
+
+
+(2) Start the `JLinkGDEBServer`, e.g.:
+
+[source%nowrap, bash]
+----
+JLinkGDBServer -Device XMC4500-1024 -if SWD
+----
+
+(3) In order to log messages printed to `stdout` we connect to port 2333 via
+telnet.
+
+[source%nowrap, bash]
+----
+telnet 127.0.0.1 2333
+----
+
+(4) We launch the debugger and control the debug session:
+
+[source%nowrap, bash]
+----
+arm-none-eabi-gdb -q BUILD/XMC_4500_RELAX_KIT/GCC_ARM/main.elf
+(gdb) target remote :2331
+(gdb) monitor reset
+(gdb) load
+(gdb) monitor reset
+(gdb) b main
+(gdb) c
+[...]
+----

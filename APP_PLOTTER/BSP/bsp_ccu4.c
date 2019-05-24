@@ -29,11 +29,11 @@
 ********************************************************************************************************************/
 
 #define PWM_PERIOD_VALUE_PEN 2343     // Period of 20ms
-#define PWM_PERIOD_VALUE_XY 176       // Period XY Motor --> 1,5ms
+// #define PWM_PERIOD_VALUE_XY 176       // Period XY Motor --> 1,5ms
 
 #define PWM_DEF_COMP_VALUE_UP 117     // Compare Match Up --> 1,5ms neutral position
 #define PWM_DEF_COMP_VALUE_DOWN 175   // Compare Match Up --> 1ms pen down
-#define PWM_DEF_COMP_VALUE_XY 88      // Compare Match Up --> 0,75ms
+// #define PWM_DEF_COMP_VALUE_XY 88      // Compare Match Up --> 0,75ms
 
 #define OUTP1_3 P1_3
 
@@ -74,36 +74,36 @@ _Bool BSP_ConfigCCU4_Timer(void)
 
   /* Initialize the Slice */
   XMC_CCU4_SLICE_CompareInit(SLICE_PTR_CCU40_CC40, &g_timer_object);
-  XMC_CCU4_SLICE_CompareInit(SLICE_PTR_CCU40_CC40, &g_timer_object);
+  // XMC_CCU4_SLICE_CompareInit(SLICE_PTR_CCU40_CC41, &g_timer_object);
 
   XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC40, PWM_PERIOD_VALUE_PEN); // sollte man eine Frequenz von 1650Hz herausbekommen
-  XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC41, PWM_PERIOD_VALUE_XY); // sollte man eine Frequenz von 1650Hz herausbekommen
+  // XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC41, PWM_PERIOD_VALUE_XY); // sollte man eine Frequenz von 1650Hz herausbekommen
   XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC40, PWM_DEF_COMP_VALUE_UP);
-  XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC41, PWM_DEF_COMP_VALUE_XY);
+  // XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC41, PWM_DEF_COMP_VALUE_XY);
   /* Enable shadow transfer */
   XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_0);
-  XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_1);
+  // XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_1);
   /* Enable External Start to Event 0 */
   XMC_CCU4_SLICE_StartConfig(SLICE_PTR_CCU40_CC40, XMC_CCU4_SLICE_EVENT_0, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
-  XMC_CCU4_SLICE_StartConfig(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_EVENT_0, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
+  // XMC_CCU4_SLICE_StartConfig(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_EVENT_0, XMC_CCU4_SLICE_START_MODE_TIMER_START_CLEAR);
 
   /* Enable compare match events */
   XMC_CCU4_SLICE_EnableEvent(SLICE_PTR_CCU40_CC40, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP);
-  XMC_CCU4_SLICE_EnableEvent(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP);
+  // XMC_CCU4_SLICE_EnableEvent(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP);
   /* Connect compare match event to SR0 */
-  XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC40, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_0); //XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP
-  XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_1); //XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP
+  XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC40, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_0);
+  // XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_1);
   /* Set NVIC priority */
   NVIC_SetPriority(CCU40_0_IRQn, 14U);
-  NVIC_SetPriority(CCU40_1_IRQn, 13U);
+  // NVIC_SetPriority(CCU40_1_IRQn, 13U);
   /* Enable IRQ */
   NVIC_EnableIRQ(CCU40_0_IRQn);
-  NVIC_EnableIRQ(CCU40_1_IRQn);
+  // NVIC_EnableIRQ(CCU40_1_IRQn);
   /* Enable CCU4 PWM output */
   XMC_GPIO_Init(OUTP1_3, &PWM_0_gpio_out_config);
   /* Get the slice out of idle mode */
   XMC_CCU4_EnableClock(MODULE_PTR_CCU40, SLICE_NUMBER_CCU40_CC40);
-  XMC_CCU4_EnableClock(MODULE_PTR_CCU40, SLICE_NUMBER_CCU40_CC41);
+  // XMC_CCU4_EnableClock(MODULE_PTR_CCU40, SLICE_NUMBER_CCU40_CC41);
   /* Start timer*/
   //XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC40);
   //XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC41);
@@ -111,40 +111,37 @@ _Bool BSP_ConfigCCU4_Timer(void)
   return true;
 }
 
-_Bool BSP_PWM_SetDutyCycle(int led, uint16_t dutycycle)
+_Bool BSP_PWM_SetPen(uint8_t cmd)
 {
-	// uint32_t period = PWM_PERIOD_VALUE;
-  // uint32_t compare = 0;
-
-  if(led == 1) // Stift hochfahren --> 1,5ms
+  if(cmd == 1) // Pen UP --> 1,5ms
   {
     XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC40, PWM_PERIOD_VALUE_PEN);
     XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC40, PWM_DEF_COMP_VALUE_UP);
     XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_0);
     XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC40);
   }
-  if(led == 2)  // Stift runterfahren --> 2ms
+  if(cmd == 2)  // Pen Down --> 2ms
   {
     XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC40, PWM_PERIOD_VALUE_PEN);
     XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC40, PWM_DEF_COMP_VALUE_DOWN);
     XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_0);
     XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC40);
   }
-  if(led == 3)
-  {
-    XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC41, PWM_PERIOD_VALUE_XY);
-    XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC41, PWM_DEF_COMP_VALUE_XY);
-    XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_1);
-    XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC41);
-  }
-  if(led == 4) // Timer ausschalten
+  // if(led == 3)
+  // {
+  //   XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC41, PWM_PERIOD_VALUE_XY);
+  //   XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC41, PWM_DEF_COMP_VALUE_XY);
+  //   XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_1);
+  //   XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC41);
+  // }
+  if(cmd == 3) // Timer ausschalten
   {
     XMC_CCU4_SLICE_StopTimer(SLICE_PTR_CCU40_CC40);
   }
-  if(led == 5) // Timer ausschalten
-  {
-    XMC_CCU4_SLICE_StopTimer(SLICE_PTR_CCU40_CC41);
-  }
+  // if(led == 5) // Timer ausschalten
+  // {
+  //   XMC_CCU4_SLICE_StopTimer(SLICE_PTR_CCU40_CC41);
+  // }
 
 
 	return true;

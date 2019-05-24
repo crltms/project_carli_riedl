@@ -155,8 +155,6 @@ void  BSP_IntClr (CPU_DATA int_id);
 void  BSP_IntVectSet (CPU_DATA int_id, CPU_FNCT_VOID isr);
 void  BSP_IntPrioSet (CPU_DATA int_id, CPU_INT08U prio);
 
-void BSP_Timer_Handler(void);
-
 void BSP_IntHandlerSCU (void);
 void BSP_IntHandlerERU0_00 (void);
 void BSP_IntHandlerERU0_01 (void);
