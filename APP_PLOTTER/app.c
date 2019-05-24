@@ -64,7 +64,7 @@ static  OS_TCB   AppTaskLEDTCB;
 static  CPU_STK  AppTaskComStk[APP_CFG_TASK_COM_STK_SIZE];
 static  OS_TCB   AppTaskComTCB;
 
-static  CPU_STK  AppTaskXYTestStk[APP_CFG_TASK_COM_STK_SIZE];
+static  CPU_STK  AppTaskXYTestStk[APP_CFG_TASK_XYTEST_STK_SIZE];
 static  OS_TCB   AppTaskXYTestTCB;
 
 // Memory Block                                                           // <2>
@@ -73,6 +73,8 @@ CPU_CHAR    MyPartitionStorage[NUM_MSG - 1][MAX_MSG_LENGTH];
 // Message Queue
 OS_Q        UART_ISR;
 OS_Q        DUTY_QUEUE;
+// OS_Q        START_QUEUE;
+OS_TMR      TMR_STEP;
 
 OS_SEM      XYTEST_SEM;
 
@@ -85,6 +87,7 @@ static  void AppTaskLED (void  *p_arg);
 static  void AppTaskXYTest (void  *p_arg);
 
 uint8_t dir = 0;
+//uint8_t dir = 0;
 /* Only for testing with logic analyzer --> how long is the LedTask executing
 const XMC_GPIO_CONFIG_t  config_PortOut	=
 {
@@ -114,7 +117,7 @@ int main (void)
   BSP_IntEn (BSP_INT_ID_USIC1_01); //**
   BSP_IntEn (BSP_INT_ID_USIC1_00); //**
   BSP_IntEn (BSP_INT_ID_CCU40_00); //** PORT 1.3
-  BSP_IntEn (BSP_INT_ID_CCU40_01); //** FOR MOTOR
+  //BSP_IntEn (BSP_INT_ID_CCU40_01); //** FOR MOTOR
 // init SEMI Hosting DEBUG Support                                        // <4>
 #if SEMI_HOSTING
   initRetargetSwo();
@@ -253,7 +256,27 @@ static void AppObjCreate (void)
   if (err != OS_ERR_NONE)
     APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 
-  OSSemCreate(& XYTEST_SEM, "XYTest_sem", 0, &err);
+  // Create timer
+  // OSTmrCreate(&TMR_STEP,
+  //             "Timer Step",
+  //             0,
+  //             1,
+  //             OS_OPT_TMR_PERIODIC,
+  //             BSP_Timer_Handler,
+  //             0,
+  //             &err);
+  // if (err != OS_ERR_NONE)
+  //     APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
+  // OSTmrStart (&TMR_STEP,&err);
+
+  // OSQCreate ( (OS_Q *)     &START_QUEUE,
+  //       (CPU_CHAR *) "START Queue",
+  //       (OS_MSG_QTY) NUM_MSG,
+  //       (OS_ERR   *) &err);
+  // if (err != OS_ERR_NONE)
+  //   APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
+
+  OSSemCreate(&XYTEST_SEM, "XYTest_sem", 0, &err);
   if (err != OS_ERR_NONE)
       APP_TRACE_DBG ("Error OSQCreate: AppObjCreate\n");
 }
@@ -305,20 +328,20 @@ static void  AppTaskCreate (void)
     APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate(LED)\n");
 
   OSTaskCreate ( (OS_TCB     *) &AppTaskXYTestTCB,
-           (CPU_CHAR   *) "TaskXYTest",
+           (CPU_CHAR   *) "TestTaskXY",
            (OS_TASK_PTR) AppTaskXYTest,
            (void       *) 0,
-           (OS_PRIO) APP_CFG_TASK_XYTest_PRIO,
-           (CPU_STK    *) &AppTaskXYTestStk[0],
-           (CPU_STK_SIZE) APP_CFG_TASK_XYTest_STK_SIZE / 10u,
-           (CPU_STK_SIZE) APP_CFG_TASK_XYTest_STK_SIZE,
+           (OS_PRIO) APP_CFG_TASK_XYTEST_PRIO,
+           (CPU_STK    *) &AppTaskLEDStk[0],
+           (CPU_STK_SIZE) APP_CFG_TASK_XYTEST_STK_SIZE / 10u,
+           (CPU_STK_SIZE) APP_CFG_TASK_XYTEST_STK_SIZE,
            (OS_MSG_QTY) 0u,
            (OS_TICK) 0u,
            (void       *) 0,
            (OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
            (OS_ERR     *) &err);
   if (err != OS_ERR_NONE)
-    APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate(XYTest)\n");
+    APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate(LED)\n");
 }
 
 void AppTaskXYTest(void *p_arg)
@@ -333,13 +356,34 @@ void AppTaskXYTest(void *p_arg)
   uint8_t reg_val = 0x00;
   uint8_t recv = 0;
   int end1, end2, end3, end4;
-  int steps, rounds;
+  int steps = 0;
+  int rounds = 0;
+  int test = 0;
   while(DEF_TRUE)
   {
-    OSSemPend(&XYTEST_SEM, 0, OS_OPT_PEND_BLOCKING, &ts,&err);
-    if ((err != OS_ERR_NONE))
-        APP_TRACE_DBG ("Error OSSemPend: AppTaskXYTest\n");
-
+    // OSSemPend(&XYTEST_SEM, 0, OS_OPT_PEND_BLOCKING, &ts,&err);
+    // if ((err != OS_ERR_NONE))
+    //     APP_TRACE_DBG ("Error OSSemPend: AppTaskXYTest\n");
+    //
+    // p_msg = OSQPend (&START_QUEUE,                                          // <16>
+    //       0,
+    //       OS_OPT_PEND_BLOCKING,
+    //       &msg_size,
+    //       &ts,
+    //       &err);
+    // if (err != OS_ERR_NONE)
+    //   APP_TRACE_DBG ("Error OSQPend: AppTaskLED\n");
+    // OSTimeDlyHMSM(0,
+    //               0,
+    //               0,
+    //               1,
+    //               OS_OPT_TIME_HMSM_STRICT,
+    //               &err);
+    while(test < 255)
+    {
+      test++;
+    }
+    test = 0;
     if(XMC_GPIO_GetInput(D5) == 1)  // y-Achse MinusRichtung
       end1 = 1;
     else
@@ -363,17 +407,18 @@ void AppTaskXYTest(void *p_arg)
     // XY Abfahren
     if((dir == 0)||(dir == 1)||(dir == 2)||(dir == 3))
     {
-      if(steps <= 200)
-        steps++;
-      else
-      {
-        steps = 0;
-        rounds++;
-      }
+      // if(steps <= 200)
+      //   steps++;
+      // else
+      // {
+      //   steps = 0;
+      //   rounds++;
+      // }
       if(dir == 0) // y-Minusichtung
       {
         if(end1 == 1)
         {
+          steps++;
           if(lowhigh == 0)
           {
             reg_val = 0x00;
@@ -392,10 +437,14 @@ void AppTaskXYTest(void *p_arg)
           }
         }
         else
+        {
           dir = 1;
+          steps = 0;
+        }
       }
       if(dir == 1) // y-Plusrichtung
       {
+        steps++;
         if(end2 == 1)
         {
           if(lowhigh == 0)
@@ -416,12 +465,16 @@ void AppTaskXYTest(void *p_arg)
           }
         }
         else
+        {
           dir = 2;
+          steps = 0;
+        }
       }
       if(dir == 2) // x-Minusrichtung
       {
         if(end3 == 1)
         {
+          steps++;
           if(lowhigh == 0)
           {
             reg_val = 0x00;
@@ -440,12 +493,16 @@ void AppTaskXYTest(void *p_arg)
           }
         }
         else
+        {
           dir = 3;
+          steps = 0;
+        }
       }
       if(dir == 3) // x-plusrichtung
       {
         if(end4 == 1)
         {
+          steps++;
           if(lowhigh == 0)
           {
             reg_val = 0x04;
@@ -464,7 +521,10 @@ void AppTaskXYTest(void *p_arg)
           }
         }
         else
+        {
           dir = 5;
+          steps = 0;
+        }
       }
     }
   }

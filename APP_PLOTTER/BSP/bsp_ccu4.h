@@ -7,7 +7,7 @@
 #ifndef SRC_BSP_BSP_CCU4_H_
 #define SRC_BSP_BSP_CCU4_H_
 
-#include <bsp_int.h>
+//#include <bsp_int.h>
 #include <xmc_gpio.h>
 #include <xmc_ccu4.h>
 #include <xmc_scu.h>

@@ -31,8 +31,8 @@
 #define PWM_PERIOD_VALUE_PEN 2343     // Period of 20ms
 #define PWM_PERIOD_VALUE_XY 176       // Period XY Motor --> 1,5ms
 
-#define PWM_DEF_COMP_VALUE_UP 175     // Compare Match Up --> 1,5ms neutral position
-#define PWM_DEF_COMP_VALUE_DOWN 117   // Compare Match Up --> 1ms pen down
+#define PWM_DEF_COMP_VALUE_UP 117     // Compare Match Up --> 1,5ms neutral position
+#define PWM_DEF_COMP_VALUE_DOWN 175   // Compare Match Up --> 1ms pen down
 #define PWM_DEF_COMP_VALUE_XY 88      // Compare Match Up --> 0,75ms
 
 #define OUTP1_3 P1_3
@@ -94,8 +94,8 @@ _Bool BSP_ConfigCCU4_Timer(void)
   XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC40, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_0); //XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP
   XMC_CCU4_SLICE_SetInterruptNode(SLICE_PTR_CCU40_CC41, XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP, XMC_CCU4_SLICE_SR_ID_1); //XMC_CCU4_SLICE_IRQ_ID_COMPARE_MATCH_UP
   /* Set NVIC priority */
-  NVIC_SetPriority(CCU40_0_IRQn, 3U);
-  NVIC_SetPriority(CCU40_1_IRQn, 4U);
+  NVIC_SetPriority(CCU40_0_IRQn, 14U);
+  NVIC_SetPriority(CCU40_1_IRQn, 13U);
   /* Enable IRQ */
   NVIC_EnableIRQ(CCU40_0_IRQn);
   NVIC_EnableIRQ(CCU40_1_IRQn);
@@ -106,7 +106,7 @@ _Bool BSP_ConfigCCU4_Timer(void)
   XMC_CCU4_EnableClock(MODULE_PTR_CCU40, SLICE_NUMBER_CCU40_CC41);
   /* Start timer*/
   //XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC40);
-  XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC41);
+  //XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC41);
 
   return true;
 }
