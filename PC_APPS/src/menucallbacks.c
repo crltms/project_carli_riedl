@@ -32,6 +32,7 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 	if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
 
 		a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
+		a->cmd_num =0;
 		a->cmd_num = parse_GCode (a->filename);
 		// if (a->pixbuf != NULL) {
 		// 	a->pixbuf = NULL;
@@ -207,27 +208,38 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 
 	cairo_set_source_rgb (w->cr, 0.0, 0.0, 0.0);
 
+	//-----------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
+	//ADD MAXVAL FOR X AND Y (ASK THOMAS FOR COORDINATES :) )
+	//-----------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
+
 	if (w->filename != NULL) {
+		printf ("filename %s\n", w->filename);
 		w->filename = NULL;
 		printf ("cmd_num %i\n", w->cmd_num);
+
 		while (i <= w->cmd_num) {
-			printf ("%i %c %f %f\n", gcode[i].ID, gcode[i].cmd[2], gcode[i].x_val, gcode[i].y_val);
+			printf ("%i %s %f %f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, -gcode[i].y_val/w->ysize+1);
 			if (gcode[i].cmd[2] == '0') {
-				cairo_move_to (w->cr, gcode[i].x_val, gcode[i].y_val);
+				cairo_move_to (w->cr, gcode[i].x_val/w->xsize, -gcode[i].y_val/w->ysize+1);
 			} else if (gcode[i].cmd[2] == '1') {
-				cairo_line_to (w->cr, gcode[i].x_val, gcode[i].y_val);
+				cairo_line_to (w->cr, gcode[i].x_val/w->xsize, -gcode[i].y_val/w->ysize+1);
 			}
 
 			i++;
 		}
+		if (w->cmd_num == 0){
+			image_fail(data);
+		}
 		cairo_stroke (w->cr);
-		cairo_move_to (w->cr, 0.0, 0.0);
-		cairo_line_to (w->cr, 1.0,0.0);
-		cairo_line_to (w->cr, 1.0, 1.0);
-		cairo_line_to (w->cr, 0.0, 1.0);
-		cairo_line_to (w->cr, 0.0, 0.0);
-		cairo_move_to (w->cr, 0.0, 0.0);
-		cairo_stroke (w->cr);
+		// cairo_move_to (w->cr, 0.0, 0.0);
+		// cairo_line_to (w->cr, 1.0,0.0);
+		// cairo_line_to (w->cr, 1.0, 1.0);
+		// cairo_line_to (w->cr, 0.0, 1.0);
+		// cairo_line_to (w->cr, 0.0, 0.0);
+		// cairo_move_to (w->cr, 0.0, 0.0);
+		// cairo_stroke (w->cr);
 	}
 
 }
@@ -258,7 +270,7 @@ image_fail (gpointer data)
 					 GTK_DIALOG_DESTROY_WITH_PARENT,
 					 GTK_MESSAGE_ERROR,
 					 GTK_BUTTONS_CLOSE,
-					 "Could not load image");
+					 "Could not load gcode");
 	g_signal_connect (dialog, "response",
 			  G_CALLBACK (gtk_widget_destroy), NULL);
 	gtk_widget_show (dialog);

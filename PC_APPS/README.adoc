@@ -13,6 +13,7 @@ about: Crtl + A
 
 strtod:
 change locales
+locale
 LC_NUMERIC="en_US.utf8"
 export LC_NUMERIC
 

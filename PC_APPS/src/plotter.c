@@ -56,6 +56,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), "Riedl & Carli");
 	gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (a->headerbar), TRUE);
 	gtk_window_set_titlebar (GTK_WINDOW (a->window), a->headerbar);
+	gtk_window_set_resizable(GTK_WINDOW(a->window), FALSE);
 // OPEN button
 	openbutton = gtk_button_new_with_label ("Open");
 	gtk_header_bar_pack_start (GTK_HEADER_BAR (a->headerbar), openbutton);
@@ -78,24 +79,17 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 //------------------------------------------------------------------------------
 //statusbar and boxes
 //------------------------------------------------------------------------------
-	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 20);
 	gtk_container_add (GTK_CONTAINER (a->window), box);
 //drawing area
 	a->draw = gtk_drawing_area_new();
-	gtk_widget_set_size_request (a->draw, 400, 400);
-	gtk_box_pack_start (GTK_BOX (box), a->draw, TRUE, TRUE, 0);
-	// Invoke the cd_draw_callback() whenever a "draw" request signal is emitted.
-	// Note: "draw" signals are emitted whenever the focus of a window changes
-	//       or when, e.g., gtk_widget_queue_draw() is invoked.
-	g_signal_connect (a->draw, "draw", G_CALLBACK (cd_draw_callback), (gpointer) a);
-	// The configure event is emitted once after start and whenever the window is
-	// resized. The callback creates a drawing surface.
-	g_signal_connect (a->draw, "configure_event", G_CALLBACK (cd_configure_event),(gpointer) a);
+	gtk_widget_set_size_request (a->draw, 700, 400);
+	gtk_box_pack_start (GTK_BOX (box), a->draw, TRUE, TRUE, 20);
 //Statusbar
 	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (box), hbox, FALSE, FALSE, 0);
 	a->statusbar = gtk_statusbar_new();
-	gtk_widget_set_size_request (a->statusbar, 300, 5);
+	gtk_widget_set_size_request (a->statusbar, 500, 5);
 	gtk_box_pack_start (GTK_BOX (hbox), a->statusbar, FALSE, FALSE, 0);
 	a->id = gtk_statusbar_get_context_id (GTK_STATUSBAR (a->statusbar), "demo");
 	a->label = gtk_label_new (" ");
@@ -106,21 +100,21 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 //commandline handling
 //------------------------------------------------------------------------------
 	if (a->filename != NULL) {
-		a->cmd_num=parse_GCode (a->filename);
-		// a->pixbuf = gdk_pixbuf_new_from_file (a->filename, NULL);
-		// if (a->pixbuf == NULL) {
-		// 	g_sprintf (a->msg, "File could not be opened. Try with OPEN-Button.");
-		// 	gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
-		// } else {
-		// 	gtk_image_set_from_pixbuf (GTK_IMAGE (a->image), a->pixbuf);
-			g_sprintf (a->msg, "Opened from commandline");
+		a->cmd_num =0;
+		a->cmd_num=parse_GCode (a->filename);;
+			g_sprintf (a->msg, "Opened %s from commandline",a->filename);
 			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
 			gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
 		// }
 	}
-	// else {
-	// 	a->pixbuf = NULL;
-	// }
+
+	// Invoke the cd_draw_callback() whenever a "draw" request signal is emitted.
+	// Note: "draw" signals are emitted whenever the focus of a window changes
+	//       or when, e.g., gtk_widget_queue_draw() is invoked.
+	g_signal_connect (a->draw, "draw", G_CALLBACK (cd_draw_callback), (gpointer) a);
+	// The configure event is emitted once after start and whenever the window is
+	// resized. The callback creates a drawing surface.
+	g_signal_connect (a->draw, "configure_event", G_CALLBACK (cd_configure_event),(gpointer) a);
 
 
 	g_object_unref (editmenu);
