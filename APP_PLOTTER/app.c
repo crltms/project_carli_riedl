@@ -505,12 +505,40 @@ void AppTaskLED(void *p_arg)
   uint8_t   countsteps = 255;
   uint8_t   dir_x = 0x00;
   uint8_t   dir_y = 0x00;
+  uint8_t   dir_xy = 0x00;
   int   x_axis_mov = 0;
   int   x_axis_curr = 0;
   int   x_axis_end = 0;
   int   y_axis_mov = 0;
   int   y_axis_curr = 0;
   int   y_axis_end = 0;
+
+  // PEN UP and move to the 0-0-pos
+  BSP_PWM_SetPen(1);
+  OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
+  if(err != OS_ERR_NONE)
+    APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+  // Set the output of the pen OFF
+  BSP_PWM_SetPen(3);
+  while(XMC_GPIO_GetInput(D5)||XMC_GPIO_GetInput(D7))
+  {
+    dir_xy = 0x00;
+    _mcp23s08_reset_ss(MCP23S08_SS);
+    _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+    _mcp23s08_set_ss(MCP23S08_SS);
+
+    while(countsteps!=0)
+      countsteps--;
+    countsteps = 255;
+
+    if(XMC_GPIO_GetInput(D7))
+      dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
+    if(XMC_GPIO_GetInput(D5))
+      dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
+    _mcp23s08_reset_ss(MCP23S08_SS);
+    _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+    _mcp23s08_set_ss(MCP23S08_SS);
+  }
   while(DEF_TRUE)
   {
     errno = 0;
@@ -572,7 +600,7 @@ void AppTaskLED(void *p_arg)
 
     if((y_axis_end - y_axis_curr)==0) // next point is equally
       y_axis_mov = 0;
-    if((x_axis_end - y_axis_curr)<0)  // go "up" --> minus
+    if((y_axis_end - y_axis_curr)<0)  // go "up" --> minus
     {
       y_axis_mov = -1;
       dir_y = Y_MINUS_PLOT_HIGH;
@@ -586,7 +614,7 @@ void AppTaskLED(void *p_arg)
     // move pen x axis
     while(x_axis_mov!=0)
     {
-      if(x_axis_curr == x_axis_end)//(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
+      if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))//(x_axis_curr == x_axis_end)
         break;
       x_axis_curr+=x_axis_mov;
       _mcp23s08_reset_ss(MCP23S08_SS);
@@ -604,7 +632,7 @@ void AppTaskLED(void *p_arg)
     // move pen y axis
     while(y_axis_mov!=0)
     {
-      if(y_axis_curr == y_axis_end)//(((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))
+      if(((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
         break;
       y_axis_curr+=y_axis_mov;
       _mcp23s08_reset_ss(MCP23S08_SS);
@@ -619,23 +647,6 @@ void AppTaskLED(void *p_arg)
       _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
       _mcp23s08_set_ss(MCP23S08_SS);
     }
-    // sscanf(token, "%s", &dutycycle);
-    //
-    // dutycycle = strtol(token, &pEnd,10);
-    // // control execution of strol
-    // if((errno == ERANGE &&((dutycycle == LONG_MAX)||(dutycycle==LONG_MIN)))||(errno != 0 && dutycycle == 0))
-    //   APP_TRACE_DBG ("Error strtol: AppTaskLED\n");
-
-    // jump in subroutine to set the dutycycle
-    //token = strtok(NULL, ":");
-    // if(*token == '1')           // timer on and pen UP
-    //   ret = BSP_PWM_SetPen(1);
-    // if(*token == '2')           // timer on and pen DOWN
-    //   ret = BSP_PWM_SetPen(2);
-    // if(*token == '3')           // Output/Timer OFF
-    //   ret = BSP_PWM_SetPen(3);
-    // if(!ret)
-    //   APP_TRACE_DBG ("Error returnval: AppTaskLED\n");
 
     APP_TRACE_DBG ("Led Task\n");
   }
