@@ -4,11 +4,94 @@
 #include <string.h>
 #include "serial.h"
 
+typedef struct
+{
+  GtkWidget  *window;
+  guint       progress_id;
+	GtkWidget  *pbar;
+} WorkerData;
+
 void
 quit_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
 	widgets *a = (widgets *) data;
 	g_application_quit (G_APPLICATION (a->app));
+}
+void
+draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+	// widgets *a = (widgets *) data;
+	printf("draw_callback\n");
+	WorkerData *wd;
+  GThread    *thread;
+  // GtkWidget  *pbar =NULL;
+
+  wd = g_malloc (sizeof *wd);
+
+  wd->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(wd->window),"Drawing Progress");
+
+  wd->pbar = gtk_progress_bar_new ();
+  gtk_container_add (GTK_CONTAINER (wd->window), wd->pbar);
+	gtk_container_set_border_width(GTK_CONTAINER (wd->window),30);
+	gtk_window_set_default_size(GTK_WINDOW(wd->window),500,200);
+	gtk_widget_show_all (wd->window);
+
+  /* add a timeout that will update the progress bar every 100ms */
+	wd->progress_id = g_timeout_add (100, update_progress_in_timeout, wd);
+
+
+  /* run the time-consuming operation in a separate thread */
+  thread = g_thread_new ("worker", worker, wd);
+  g_thread_unref (thread);
+}
+gpointer
+worker (gpointer data)
+{
+  WorkerData *wd = data;
+
+  /* hard work here */
+  g_usleep (5000000);
+
+  /* we finished working, do something back in the main thread */
+	if(wd->progress_id > 0){
+		g_idle_add (worker_finish_in_idle, wd);
+	}
+
+  return NULL;
+}
+
+gboolean
+update_progress_in_timeout (gpointer data)
+{
+	WorkerData *wd = data;
+	if ( GTK_IS_PROGRESS_BAR(wd->pbar) == 0){
+	  g_source_remove (wd->progress_id);
+		wd->progress_id =0;
+		return FALSE;
+	}
+	gtk_progress_bar_pulse ((gpointer)wd->pbar);
+
+  return TRUE; /* keep running */
+}
+gboolean
+worker_finish_in_idle (gpointer data)
+{
+  WorkerData *wd = data;
+
+  /* we're done, stop updating the progress bar */
+  g_source_remove (wd->progress_id);
+  /* and destroy everything */
+  gtk_widget_destroy (wd->window);
+  g_free (wd);
+
+  return FALSE; /* stop running */
+}
+void
+stop_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
+{
+	// widgets *a = (widgets *) data;
+	printf("stop_callback\n");
 }
 
 void

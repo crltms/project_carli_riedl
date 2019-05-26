@@ -8,6 +8,8 @@
 // map menu actions to callbacks
 const GActionEntry app_actions[] = {
 	{ "open", open_callback, NULL, NULL, NULL, {0, 0, 0} },
+	{ "draw", draw_callback, NULL, NULL, NULL, {0, 0, 0} },
+	{ "stop", stop_callback, NULL, NULL, NULL, {0, 0, 0} },
 	{ "save", save_callback, NULL, NULL, NULL, {0, 0, 0} },
 	{ "quit", quit_callback, NULL, NULL, NULL, {0, 0, 0} },
 	{ "about", about_callback, NULL, NULL, NULL, {0, 0, 0} }
@@ -23,7 +25,7 @@ static void
 construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplicationCommandLine *cmdline)
 {
 	GMenu *editmenu;
-	GtkWidget *openbutton;
+	GtkWidget *openbutton,*startbutton, *stopbutton;
 	GMenu *gearmenu;
 	GtkWidget *gearmenubutton;
 	GtkWidget *gearicon;
@@ -46,6 +48,8 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 
 // define keyboard accelerators
 	const gchar *open_accels[2] = { "<Ctrl>O", NULL };
+	const gchar *stop_accels[2] = { "<Ctrl>F", NULL };
+	const gchar *draw_accels[2] = { "<Ctrl>D", NULL };
 	const gchar *save_accels[2] = { "<Ctrl>S", NULL };
 	const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
 	const gchar *about_accels[2] = { "<Ctrl>A", NULL };
@@ -61,6 +65,14 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	openbutton = gtk_button_new_with_label ("Open");
 	gtk_header_bar_pack_start (GTK_HEADER_BAR (a->headerbar), openbutton);
 	gtk_actionable_set_action_name (GTK_ACTIONABLE (openbutton), "app.open");
+// Draw button
+	startbutton = gtk_button_new_with_label ("Start");
+	gtk_header_bar_pack_start (GTK_HEADER_BAR (a->headerbar), startbutton);
+	gtk_actionable_set_action_name (GTK_ACTIONABLE (startbutton), "app.draw");
+// Draw button
+	stopbutton = gtk_button_new_with_label ("Stop");
+	gtk_header_bar_pack_start (GTK_HEADER_BAR (a->headerbar), stopbutton);
+	gtk_actionable_set_action_name (GTK_ACTIONABLE (stopbutton), "app.stop");
 
 //gear menu button
 	gearmenubutton = gtk_menu_button_new();
@@ -122,6 +134,10 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 // connect keyboard accelerators
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
 					       "app.open", open_accels);
+	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
+							 	 "app.stop", stop_accels);
+	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
+							 	 "app.draw", draw_accels);
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
 					       "app.save", save_accels);
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),

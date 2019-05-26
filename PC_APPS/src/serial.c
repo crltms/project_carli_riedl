@@ -55,12 +55,22 @@ void set_mincount(int fd, int mcount)
 void send_cmd(int fd, char *cmd)
 {
   int wlen = 0;
-  int leng = 40;
   /* simple output */
   wlen = write(fd, cmd, leng);
 
   if (wlen != leng) {
       printf("Error from write: %d, %d\n", wlen, errno);
+  }
+  tcdrain(fd);    /* delay for output */
+}
+void get_cmd(int fd, char buff[leng])
+{
+  int wlen = 0;
+  /* simple output */
+  wlen = read(fd, &buff, leng);
+
+  if (wlen != leng) {
+      printf("Error from read: %d, %d\n", wlen, errno);
   }
   tcdrain(fd);    /* delay for output */
 }
