@@ -59,8 +59,8 @@
 static  CPU_STK  AppStartTaskStk[APP_CFG_TASK_START_STK_SIZE];            // <1>
 static  OS_TCB   AppStartTaskTCB;
 
-static  CPU_STK  AppTaskLEDStk[APP_CFG_TASK_LED_STK_SIZE];
-static  OS_TCB   AppTaskLEDTCB;
+static  CPU_STK  AppTaskPlotStk[APP_CFG_TASK_PLOT_STK_SIZE];
+static  OS_TCB   AppTaskPlotTCB;
 
 static  CPU_STK  AppTaskComStk[APP_CFG_TASK_COM_STK_SIZE];
 static  OS_TCB   AppTaskComTCB;
@@ -82,9 +82,10 @@ static  void AppTaskStart (void  *p_arg);
 static  void AppTaskCreate (void);
 static  void AppObjCreate (void);
 static  void AppTaskCom (void  *p_arg);
-static  void AppTaskLED (void  *p_arg);
+static  void AppTaskPlot (void  *p_arg);
 // static  void AppTaskXYTest (void  *p_arg);
 
+void SendAcknowledge(uint8_t cmd);
 
 uint8_t dir = 0;
 
@@ -289,14 +290,14 @@ static void  AppTaskCreate (void)
     APP_TRACE_DBG ("Error OSTaskCreate: AppTaskCreate\n");
   }
 
-  OSTaskCreate ( (OS_TCB     *) &AppTaskLEDTCB,
-           (CPU_CHAR   *) "TaskLED",
-           (OS_TASK_PTR) AppTaskLED,
+  OSTaskCreate ( (OS_TCB     *) &AppTaskPlotTCB,
+           (CPU_CHAR   *) "TaskPlot",
+           (OS_TASK_PTR) AppTaskPlot,
            (void       *) 0,
-           (OS_PRIO) APP_CFG_TASK_LED_PRIO,
-           (CPU_STK    *) &AppTaskLEDStk[0],
-           (CPU_STK_SIZE) APP_CFG_TASK_LED_STK_SIZE / 10u,
-           (CPU_STK_SIZE) APP_CFG_TASK_LED_STK_SIZE,
+           (OS_PRIO) APP_CFG_TASK_PLOT_PRIO,
+           (CPU_STK    *) &AppTaskPlotStk[0],
+           (CPU_STK_SIZE) APP_CFG_TASK_PLOT_STK_SIZE / 10u,
+           (CPU_STK_SIZE) APP_CFG_TASK_PLOT_STK_SIZE,
            (OS_MSG_QTY) 0u,
            (OS_TICK) 0u,
            (void       *) 0,
@@ -311,7 +312,7 @@ static void  AppTaskCreate (void)
                (OS_TASK_PTR) AppTaskXYTest,
                (void       *) 0,
                (OS_PRIO) APP_CFG_TASK_XYTEST_PRIO,
-               (CPU_STK    *) &AppTaskLEDStk[0],
+               (CPU_STK    *) &AppTaskXYTestStk[0],
                (CPU_STK_SIZE) APP_CFG_TASK_XYTEST_STK_SIZE / 10u,
                (CPU_STK_SIZE) APP_CFG_TASK_XYTEST_STK_SIZE,
                (OS_MSG_QTY) 0u,
@@ -488,7 +489,32 @@ void AppTaskXYTest(void *p_arg)
   }
 */
 
-void AppTaskLED(void *p_arg)
+void SendAcknowledge(uint8_t cmd)
+{
+  if(cmd == 0)
+  {
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'G');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '0');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '0');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+  }
+  if(cmd == 1)
+  {
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'G');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '0');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '1');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+  }
+  if(cmd == 2)
+  {
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+  }
+}
+
+void AppTaskPlot(void *p_arg)
 {
   void        *errmem = NULL;
   OS_ERR      err;
@@ -502,6 +528,7 @@ void AppTaskLED(void *p_arg)
   uint8_t reg_val = 0;
   char  compG00[] = "G00";
   char  compG01[] = "G01";
+  uint8_t   ack = 2;
   uint8_t   countsteps = 255;
   uint8_t   dir_x = 0x00;
   uint8_t   dir_y = 0x00;
@@ -541,10 +568,11 @@ void AppTaskLED(void *p_arg)
   }
   while(DEF_TRUE)
   {
+    ack = 2;
     errno = 0;
     errmem = memset(&data[0], 0, MAX_MSG_LENGTH);
     if(errmem != &data)
-      APP_TRACE_DBG ("Error memset: AppTaskLED\n");
+      APP_TRACE_DBG ("Error memset: AppTaskPlot\n");
 
     p_msg = OSQPend (&DUTY_QUEUE,                                          // <16>
           0,
@@ -553,23 +581,29 @@ void AppTaskLED(void *p_arg)
           &ts,
           &err);
     if (err != OS_ERR_NONE)
-      APP_TRACE_DBG ("Error OSQPend: AppTaskLED\n");
+      APP_TRACE_DBG ("Error OSQPend: AppTaskPlot\n");
 
     if(msg_size < 20)
       errmem = memcpy (data, p_msg, msg_size - 1);
     else
-      APP_TRACE_DBG ("Error msg_size/memcpy: AppTaskLED\n");
+      APP_TRACE_DBG ("Error msg_size/memcpy: AppTaskPlot\n");
     if(errmem != &data)
-      APP_TRACE_DBG ("Error memcpy: AppTaskLED\n");
+      APP_TRACE_DBG ("Error memcpy: AppTaskPlot\n");
 
     char *token = strtok(data, " ");
 
     if(strncmp(data, compG00, 3) == 0)           // timer on and pen UP
+    {
       ret = BSP_PWM_SetPen(1);
+      ack = 0;
+    }
     if(strncmp(data, compG01, 3) == 0)           // timer on and pen DOWN
+    {
+      ack = 1;
       ret = BSP_PWM_SetPen(2);
+    }
     if(!ret)
-      APP_TRACE_DBG ("Error returnval: AppTaskLED\n");
+      APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
 
     // Wait 100ms to move the PEN
     OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
@@ -578,7 +612,7 @@ void AppTaskLED(void *p_arg)
     // Set the output of the pen OFF
     ret = BSP_PWM_SetPen(3);
     if(!ret)
-      APP_TRACE_DBG ("Error returnval: AppTaskLED\n");
+      APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
 
     token = strtok(NULL, " ");
     x_axis_end = strtol(token, &pEnd,10);
@@ -614,7 +648,7 @@ void AppTaskLED(void *p_arg)
     // move pen x axis
     while(x_axis_mov!=0)
     {
-      if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))//(x_axis_curr == x_axis_end)
+      if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))//(x_axis_curr == x_axis_end)//
         break;
       x_axis_curr+=x_axis_mov;
       _mcp23s08_reset_ss(MCP23S08_SS);
@@ -648,6 +682,7 @@ void AppTaskLED(void *p_arg)
       _mcp23s08_set_ss(MCP23S08_SS);
     }
 
+    SendAcknowledge(ack);
     APP_TRACE_DBG ("Led Task\n");
   }
 }
@@ -721,13 +756,13 @@ static void AppTaskCom (void *p_arg)
       APP_TRACE_DBG ("Error OSMemPut: AppTaskCom\n");
 
     // send ACK in return
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);                           // <19>
+    //XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);                           // <19>
 
     // print the received message to the debug interface
     sprintf (debug_msg, "Msg: %s\tLength: %d\n", msg, msg_size - 1);     // <20>
     APP_TRACE_INFO (debug_msg);
 
-    // send the message to AppTaskLED to change the dutycycle
+    // send the message to AppTaskPlot to change the dutycycle
     OSQPost ( (OS_Q      *) &DUTY_QUEUE,
       (void      *) &CommRxBuf[0],
       (OS_MSG_SIZE) msg_size,
@@ -737,16 +772,16 @@ static void AppTaskCom (void *p_arg)
       APP_TRACE_DBG ("Error OSQPost: AppTaskCom\n");
 
     // send the received message back via the UART pre-text with "DUC: " --> Dutycycle
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');                           // <21>
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'U');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'C');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, ':');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, ' ');
-    for (i = 0; i <= msg_size; i++) {
-      XMC_UART_CH_Transmit (XMC_UART1_CH1, msg[i]);
-    }
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '%');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');                           // <21>
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, 'U');
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, 'C');
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, ':');
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, ' ');
+    // for (i = 0; i <= msg_size; i++) {
+    //   XMC_UART_CH_Transmit (XMC_UART1_CH1, msg[i]);
+    // }
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, '%');
+    // XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
   }
 }
 /************************************************************************ EOF */
