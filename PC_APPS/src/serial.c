@@ -57,20 +57,43 @@ void send_cmd(int fd, char *cmd)
   int wlen = 0;
   /* simple output */
   wlen = write(fd, cmd, leng);
+  printf("write fd %i %s\n",fd,cmd);
 
   if (wlen != leng) {
       printf("Error from write: %d, %d\n", wlen, errno);
   }
   tcdrain(fd);    /* delay for output */
 }
-void get_cmd(int fd, char buff[leng])
+void get_cmd(int fd, char *buff)
 {
-  int wlen = 0;
-  /* simple output */
-  wlen = read(fd, &buff, leng);
+  // int wlen = 0;
+  // /* simple output */
+  // wlen = read(fd, &buff, leng);
+  // printf("read fd %i\n",fd);
+  //
+  // if (wlen != leng) {
+  //     printf("Error from read: %d, %d, %s\n", wlen, errno,buff);
+  // }
 
-  if (wlen != leng) {
-      printf("Error from read: %d, %d\n", wlen, errno);
+  int n;
+  char xbuff='0';
+  int i =0;
+  while(xbuff != '\n'){
+    n = read(fd, &xbuff, 1);
+    // printf("xbuff %c n %i\n", xbuff,n);
+    buff[i]=xbuff;
+    i++;
   }
+  // printf("buff %s", buff);
+  // n = read(fd, &xbuff[1], 1);
+  // printf("buff %c, n %i\n", xbuff[1],n);
+  // n = read(fd, &xbuff, 1);
+  // printf("buff %c, n %i\n", xbuff,n);
+  // n = read(fd, &xbuff, 1);
+  // printf("buff %c, n %i\n", xbuff,n);
+  // n = read(fd, &xbuff, 1);
+  // printf("buff %c, n %i\n", xbuff,n);
+
+
   tcdrain(fd);    /* delay for output */
 }

@@ -25,7 +25,7 @@ typedef struct {
 	gint state;
 	gint cmd_num;
 	cairo_t* cr;
-
+	int fd;
 
 } widgets;
 

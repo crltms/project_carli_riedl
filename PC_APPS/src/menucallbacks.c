@@ -4,11 +4,14 @@
 #include <string.h>
 #include "serial.h"
 
+#define STRING_SIZE 30
+
 typedef struct
 {
   GtkWidget  *window;
   guint       progress_id;
 	GtkWidget  *pbar;
+	int fd;
 } WorkerData;
 
 void
@@ -20,13 +23,13 @@ quit_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 void
 draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-	// widgets *a = (widgets *) data;
+	widgets *a = (widgets *) data;
 	printf("draw_callback\n");
 	WorkerData *wd;
   GThread    *thread;
-  // GtkWidget  *pbar =NULL;
 
   wd = g_malloc (sizeof *wd);
+  wd->fd = a->fd;
 
   wd->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(wd->window),"Drawing Progress");
@@ -49,9 +52,56 @@ gpointer
 worker (gpointer data)
 {
   WorkerData *wd = data;
+  gchar cmd[30]={0};
+  gchar string[STRING_SIZE] = "";
+  g_snprintf(string,STRING_SIZE,"#G00 2000 3000$\n");
+  g_print("%s\n",string);
+  send_cmd(wd->fd, string);
+  while(cmd[0] != 'D'){
+    get_cmd(wd->fd,cmd);
+  }
+  g_print("%s\n",cmd);
+  cmd[0]='C';
+  g_snprintf(string,STRING_SIZE,"#G01 10 10$\n");
+  g_print("%s\n",string);
+  send_cmd(wd->fd, string);
+  while(cmd[0] != 'D'){
+    get_cmd(wd->fd,cmd);
+  }
+  g_print("%s\n",cmd);
+  cmd[0]='C';
+  g_snprintf(string,STRING_SIZE,"#G01 2000 3000$\n");
+  g_print("%s\n",string);
+  send_cmd(wd->fd, string);
+  while(cmd[0] != 'D'){
+    get_cmd(wd->fd,cmd);
+  }
+  g_print("%s\n",cmd);
+  cmd[0]='C';
+  g_snprintf(string,STRING_SIZE,"#G01 10 3000$\n");
+  g_print("%s\n",string);
+  send_cmd(wd->fd, string);
+  while(cmd[0] != 'D'){
+    get_cmd(wd->fd,cmd);
+  }
+  g_print("%s\n",cmd);
+  cmd[0]='C';
+  g_snprintf(string,STRING_SIZE,"#G01 2000 3000$\n");
+  g_print("%s\n",string);
+  send_cmd(wd->fd, string);
+  while(cmd[0] != 'D'){
+    get_cmd(wd->fd,cmd);
+  }
+  g_print("%s\n",cmd);
+  cmd[0]='C';
+  g_snprintf(string,STRING_SIZE,"#G00 0 0$\n");
+  g_print("%s\n",string);
+  send_cmd(wd->fd, string);
 
+  get_cmd(wd->fd,cmd);
   /* hard work here */
-  g_usleep (5000000);
+  // g_usleep (5000000);
+
 
   /* we finished working, do something back in the main thread */
 	if(wd->progress_id > 0){
@@ -65,6 +115,8 @@ gboolean
 update_progress_in_timeout (gpointer data)
 {
 	WorkerData *wd = data;
+  // char *cmd=NULL;
+
 	if ( GTK_IS_PROGRESS_BAR(wd->pbar) == 0){
 	  g_source_remove (wd->progress_id);
 		wd->progress_id =0;
@@ -291,15 +343,9 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 
 	cairo_set_source_rgb (w->cr, 0.0, 0.0, 0.0);
 
-	//-----------------------------------------------------------------------------
-	//-----------------------------------------------------------------------------
-	//ADD MAXVAL FOR X AND Y (ASK THOMAS FOR COORDINATES :) )
-	//-----------------------------------------------------------------------------
-	//-----------------------------------------------------------------------------
-
 	if (w->filename != NULL) {
 		printf ("filename %s\n", w->filename);
-		w->filename = NULL;
+		// w->filename = NULL;
 		printf ("cmd_num %i\n", w->cmd_num);
 
 		while (i <= w->cmd_num) {
@@ -317,11 +363,11 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 		}
 		cairo_stroke (w->cr);
 		// cairo_move_to (w->cr, 0.0, 0.0);
-		// cairo_line_to (w->cr, 1.0,0.0);
-		// cairo_line_to (w->cr, 1.0, 1.0);
-		// cairo_line_to (w->cr, 0.0, 1.0);
-		// cairo_line_to (w->cr, 0.0, 0.0);
-		// cairo_move_to (w->cr, 0.0, 0.0);
+		// cairo_line_to (w->cr, 0.5,0.5);
+		// // cairo_line_to (w->cr, 1.0, 1.0);
+		// // cairo_line_to (w->cr, 0.0, 1.0);
+		// // cairo_line_to (w->cr, 0.0, 0.0);
+		// // cairo_move_to (w->cr, 0.0, 0.0);
 		// cairo_stroke (w->cr);
 	}
 

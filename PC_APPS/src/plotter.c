@@ -95,7 +95,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	gtk_container_add (GTK_CONTAINER (a->window), box);
 //drawing area
 	a->draw = gtk_drawing_area_new();
-	gtk_widget_set_size_request (a->draw, 700, 400);
+	gtk_widget_set_size_request (a->draw, 390, 310);
 	gtk_box_pack_start (GTK_BOX (box), a->draw, TRUE, TRUE, 20);
 //Statusbar
 	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
@@ -182,19 +182,20 @@ main (int argc, char **argv)
 
 	int status;
 	// *************** Serial ***************
-  // char *portname = "/dev/ttyUSB0";
-  // int fd;
-	//
-  // fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
-  // if (fd < 0) {
-  //     printf("Error opening %s: %s\n", portname, strerror(errno));
-  //     return -1;
-  // }
-  // /*baudrate 115200, 8 bits, no parity, 1 stop bit */
-  // set_interface_attribs(fd, B9600);
+  char *portname = "/dev/ttyUSB0";
+  int fd;
+
+  fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
+  if (fd < 0) {
+      printf("Error opening %s: %s\n", portname, strerror(errno));
+      return -1;
+  }
+  /*baudrate 115200, 8 bits, no parity, 1 stop bit */
+  set_interface_attribs(fd, B9600);
 
 	gtk_init (&argc, &argv);
 	widgets *a = g_malloc (sizeof (widgets));
+	a->fd =fd;
 	a->app = gtk_application_new (NULL, G_APPLICATION_HANDLES_COMMAND_LINE);
 
 	g_signal_connect (a->app, "command-line", G_CALLBACK (commandline), (gpointer) a);

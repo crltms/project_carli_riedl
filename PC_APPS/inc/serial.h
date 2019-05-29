@@ -16,6 +16,6 @@
 int set_interface_attribs(int fd, int speed);
 void set_mincount(int fd, int mcount);
 void send_cmd(int fd, char *cmd);
-void get_cmd(int fd, char buff[leng]);
+void get_cmd(int fd, char *buff);
 
 #endif
