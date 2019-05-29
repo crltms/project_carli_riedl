@@ -491,26 +491,48 @@ void AppTaskXYTest(void *p_arg)
 
 void SendAcknowledge(uint8_t cmd)
 {
-  if(cmd == 0)
+  switch(cmd)
   {
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'G');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '0');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '0');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
-  }
-  if(cmd == 1)
-  {
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'G');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '0');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '1');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
-  }
-  if(cmd == 2)
-  {
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
-    XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+    case 0:
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+            break;
+    case 1:
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+            break;
+    case 2:
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+            break;
+    case 28:
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+            break;
+    case 3:
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+            break;
+    default:
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
+            break;
   }
 }
 
@@ -528,6 +550,8 @@ void AppTaskPlot(void *p_arg)
   uint8_t reg_val = 0;
   char  compG00[] = "G00";
   char  compG01[] = "G01";
+  char  compG02[] = "G02";
+  char  compG28[] = "G28";
   uint8_t   ack = 2;
   uint8_t   countsteps = 255;
   uint8_t   dir_x = 0x00;
@@ -547,28 +571,29 @@ void AppTaskPlot(void *p_arg)
     APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
   // Set the output of the pen OFF
   BSP_PWM_SetPen(3);
-  while(XMC_GPIO_GetInput(D5)||XMC_GPIO_GetInput(D7))
+  /**/while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
   {
     dir_xy = 0x00;
     _mcp23s08_reset_ss(MCP23S08_SS);
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
-
-    while(countsteps!=0)
-      countsteps--;
-    countsteps = 255;
+    OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+    // while(countsteps!=0)
+    //   countsteps--;
+    // countsteps = 255;
 
     if(XMC_GPIO_GetInput(D7))
       dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
-    if(XMC_GPIO_GetInput(D5))
+    if(XMC_GPIO_GetInput(D6))
       dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
     _mcp23s08_reset_ss(MCP23S08_SS);
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
+    OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
   }
   while(DEF_TRUE)
   {
-    ack = 2;
+    ack = 3;
     errno = 0;
     errmem = memset(&data[0], 0, MAX_MSG_LENGTH);
     if(errmem != &data)
@@ -592,96 +617,173 @@ void AppTaskPlot(void *p_arg)
 
     char *token = strtok(data, " ");
 
-    if(strncmp(data, compG00, 3) == 0)           // timer on and pen UP
+    if(strncmp(data, compG28, 3) == 0) // Go to homeposition
     {
-      ret = BSP_PWM_SetPen(1);
-      ack = 0;
+      ack = 28;
+      while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
+      {
+        dir_xy = 0x00;
+        _mcp23s08_reset_ss(MCP23S08_SS);
+        _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+        _mcp23s08_set_ss(MCP23S08_SS);
+
+        while(countsteps!=0)
+          countsteps--;
+        countsteps = 255;
+
+        if(XMC_GPIO_GetInput(D7))
+          dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
+        if(XMC_GPIO_GetInput(D5))
+          dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
+        _mcp23s08_reset_ss(MCP23S08_SS);
+        _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+        _mcp23s08_set_ss(MCP23S08_SS);
+      }
     }
-    if(strncmp(data, compG01, 3) == 0)           // timer on and pen DOWN
+    else
     {
-      ack = 1;
-      ret = BSP_PWM_SetPen(2);
+      if(strncmp(data, compG02, 3) != 0)
+      {
+        if(strncmp(data, compG00, 3) == 0)           // timer on and pen UP
+        {
+          ret = BSP_PWM_SetPen(1);
+          ack = 0;
+        }
+        if(strncmp(data, compG01, 3) == 0)           // timer on and pen DOWN
+        {
+          ack = 1;
+          ret = BSP_PWM_SetPen(2);
+        }
+        if(!ret)
+          APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
+        // Wait 100ms to move the PEN
+        OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
+        if(err != OS_ERR_NONE)
+          APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+        // Set the output of the pen OFF
+        ret = BSP_PWM_SetPen(3);
+        if(!ret)
+          APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
+
+        // Wait 500ms to move the PEN
+        OSTimeDlyHMSM(0,0,0,500,OS_OPT_TIME_HMSM_STRICT, &err);
+
+        token = strtok(NULL, " ");
+        x_axis_end = strtol(token, &pEnd,10);
+        token = strtok(NULL, " ");
+        y_axis_end = strtol(token, &pEnd,10);
+
+        if((x_axis_end - x_axis_curr)==0) // next point is equally
+          x_axis_mov = 0;
+        if((x_axis_end - x_axis_curr)<0)  // go in direction left --> minus
+        {
+          x_axis_mov = -1;
+          dir_x = X_MINUS_PLOT_HIGH;
+        }
+        if((x_axis_end - x_axis_curr)>0)  // go in direction right --> plus
+        {
+          x_axis_mov = 1;
+          dir_x = X_PLUS_PLOT_HIGH;
+        }
+
+        if((y_axis_end - y_axis_curr)==0) // next point is equally
+          y_axis_mov = 0;
+        if((y_axis_end - y_axis_curr)<0)  // go "up" --> minus
+        {
+          y_axis_mov = -1;
+          dir_y = Y_MINUS_PLOT_HIGH;
+        }
+        if((y_axis_end - y_axis_curr)>0)  // go "down" --> plus
+        {
+          y_axis_mov = 1;
+          dir_y = Y_PLUS_PLOT_HIGH;
+        }
+        // multiply number of g-code 200
+        // move pen x axis
+        while(x_axis_mov!=0)
+        {
+          if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
+            break;
+          x_axis_curr+=x_axis_mov;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          // while(countsteps!=0)
+          //   countsteps--;
+          // countsteps = 255;
+
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+        }
+        // move pen y axis
+        while(y_axis_mov!=0)
+        {
+          if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
+            break;
+          y_axis_curr+=y_axis_mov;
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          // while(countsteps!=0)
+          //   countsteps--;
+          // countsteps = 255;
+
+          _mcp23s08_reset_ss(MCP23S08_SS);
+          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
+          _mcp23s08_set_ss(MCP23S08_SS);
+          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+        }
+      }
+      // if(strncmp(data, compG02, 3) == 0)
+      // {
+      //   ack = 2;
+      //   x_axis_curr = 0;
+      //   y_axis_curr = 0;
+      //   token = strtok(NULL, " ");
+      //   x_axis_end = strtol(token, &pEnd,10);
+      //   token = strtok(NULL, " ");
+      //   y_axis_end = strtol(token, &pEnd,10);
+      //   BSP_PWM_SetPen(2);
+      //   OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
+      //   if(err != OS_ERR_NONE)
+      //     APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+      //   BSP_PWM_SetPen(3);
+      //   OSTimeDlyHMSM(0,0,0,500,OS_OPT_TIME_HMSM_STRICT, &err);
+      //   if(err != OS_ERR_NONE)
+      //     APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+      //   while(1)
+      //   {
+      //     dir_xy = 0;
+      //     if((XMC_GPIO_GetInput(D8) == 1)&&(x_axis_curr != x_axis_end))
+      //     {
+      //       dir_xy = dir_xy | X_PLUS_PLOT_HIGH;
+      //     }
+      //     if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end))
+      //     {
+      //       dir_xy = dir_xy | Y_PLUS_PLOT_HIGH;
+      //     }
+      //     if((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0)||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))
+      //       break;
+      //     x_axis_curr+=1;
+      //     y_axis_curr+=1;
+      //     _mcp23s08_reset_ss(MCP23S08_SS);
+      //     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+      //     _mcp23s08_set_ss(MCP23S08_SS);
+      //
+      //     while(countsteps!=0)
+      //       countsteps--;
+      //     countsteps = 255;
+      //
+      //     _mcp23s08_reset_ss(MCP23S08_SS);
+      //     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+      //     _mcp23s08_set_ss(MCP23S08_SS);
+      //   }
+      // }
     }
-    if(!ret)
-      APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
-
-    // Wait 100ms to move the PEN
-    OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
-    if(err != OS_ERR_NONE)
-      APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
-    // Set the output of the pen OFF
-    ret = BSP_PWM_SetPen(3);
-    if(!ret)
-      APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
-
-    token = strtok(NULL, " ");
-    x_axis_end = strtol(token, &pEnd,10);
-    token = strtok(NULL, " ");
-    y_axis_end = strtol(token, &pEnd,10);
-
-    if((x_axis_end - x_axis_curr)==0) // next point is equally
-      x_axis_mov = 0;
-    if((x_axis_end - x_axis_curr)<0)  // go in direction left --> minus
-    {
-      x_axis_mov = -1;
-      dir_x = X_MINUS_PLOT_HIGH;
-    }
-    if((x_axis_end - x_axis_curr)>0)  // go in direction right --> plus
-    {
-      x_axis_mov = 1;
-      dir_x = X_PLUS_PLOT_HIGH;
-    }
-
-    if((y_axis_end - y_axis_curr)==0) // next point is equally
-      y_axis_mov = 0;
-    if((y_axis_end - y_axis_curr)<0)  // go "up" --> minus
-    {
-      y_axis_mov = -1;
-      dir_y = Y_MINUS_PLOT_HIGH;
-    }
-    if((y_axis_end - y_axis_curr)>0)  // go "down" --> plus
-    {
-      y_axis_mov = 1;
-      dir_y = Y_PLUS_PLOT_HIGH;
-    }
-    // multiply number of g-code 200
-    // move pen x axis
-    while(x_axis_mov!=0)
-    {
-      if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))//(x_axis_curr == x_axis_end)//
-        break;
-      x_axis_curr+=x_axis_mov;
-      _mcp23s08_reset_ss(MCP23S08_SS);
-      _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-      _mcp23s08_set_ss(MCP23S08_SS);
-
-      while(countsteps!=0)
-        countsteps--;
-      countsteps = 255;
-
-      _mcp23s08_reset_ss(MCP23S08_SS);
-      _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
-      _mcp23s08_set_ss(MCP23S08_SS);
-    }
-    // move pen y axis
-    while(y_axis_mov!=0)
-    {
-      if(((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
-        break;
-      y_axis_curr+=y_axis_mov;
-      _mcp23s08_reset_ss(MCP23S08_SS);
-      _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-      _mcp23s08_set_ss(MCP23S08_SS);
-
-      while(countsteps!=0)
-        countsteps--;
-      countsteps = 255;
-
-      _mcp23s08_reset_ss(MCP23S08_SS);
-      _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
-      _mcp23s08_set_ss(MCP23S08_SS);
-    }
-
     SendAcknowledge(ack);
     APP_TRACE_DBG ("Led Task\n");
   }
@@ -755,9 +857,6 @@ static void AppTaskCom (void *p_arg)
     if (err != OS_ERR_NONE)
       APP_TRACE_DBG ("Error OSMemPut: AppTaskCom\n");
 
-    // send ACK in return
-    //XMC_UART_CH_Transmit (XMC_UART1_CH1, ACK);                           // <19>
-
     // print the received message to the debug interface
     sprintf (debug_msg, "Msg: %s\tLength: %d\n", msg, msg_size - 1);     // <20>
     APP_TRACE_INFO (debug_msg);
@@ -770,18 +869,6 @@ static void AppTaskCom (void *p_arg)
       (OS_ERR    *) &err);
     if (err != OS_ERR_NONE)
       APP_TRACE_DBG ("Error OSQPost: AppTaskCom\n");
-
-    // send the received message back via the UART pre-text with "DUC: " --> Dutycycle
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');                           // <21>
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, 'U');
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, 'C');
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, ':');
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, ' ');
-    // for (i = 0; i <= msg_size; i++) {
-    //   XMC_UART_CH_Transmit (XMC_UART1_CH1, msg[i]);
-    // }
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, '%');
-    // XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
   }
 }
 /************************************************************************ EOF */

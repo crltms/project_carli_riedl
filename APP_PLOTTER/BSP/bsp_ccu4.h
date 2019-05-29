@@ -19,9 +19,9 @@
 /******************************************************************** DEFINES */
 /* DIRECTIONS OF PLOTTER */
 #define Y_MINUS_PLOT_LOW  0x00
-#define Y_MINUS_PLOT_HIGH 0x02
+#define Y_MINUS_PLOT_HIGH 0x03
 #define Y_PLUS_PLOT_LOW   0x01
-#define Y_PLUS_PLOT_HIGH  0x03
+#define Y_PLUS_PLOT_HIGH  0x02
 #define X_MINUS_PLOT_LOW  0x00
 #define X_MINUS_PLOT_HIGH 0x08
 #define X_PLUS_PLOT_LOW   0x04
