@@ -4,15 +4,12 @@
 #include <string.h>
 #include "serial.h"
 
-#define STRING_SIZE 30
-
-typedef struct
-{
-  GtkWidget  *window;
-  guint       progress_id;
-	GtkWidget  *pbar;
-	int fd;
-} WorkerData;
+#define EoF_RES 10     // \n
+#define EoF 36         //$
+#define SoF 35         //#
+const char DONE[] = "G01\n";
+const char ERR[] = "ERR\n";
+#define STEPS_PER_MM 91
 
 void
 quit_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
@@ -23,127 +20,93 @@ quit_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 void
 draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-	widgets *a = (widgets *) data;
-	printf("draw_callback\n");
-	WorkerData *wd;
-  GThread    *thread;
+	widgets *wd = (widgets *) data;
+	printf ("draw_callback\n");
+	GThread    *thread;
 
-  wd = g_malloc (sizeof *wd);
-  wd->fd = a->fd;
+	if (GTK_IS_WIDGET (wd->progress_window) == FALSE) {
+		if (wd->cmd_num > 0) {
+			printf ("create window\n");
+			wd->progress_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+			gtk_window_set_title (GTK_WINDOW (wd->progress_window), "Drawing Progress");
 
-  wd->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(wd->window),"Drawing Progress");
-
-  wd->pbar = gtk_progress_bar_new ();
-  gtk_container_add (GTK_CONTAINER (wd->window), wd->pbar);
-	gtk_container_set_border_width(GTK_CONTAINER (wd->window),30);
-	gtk_window_set_default_size(GTK_WINDOW(wd->window),500,200);
-	gtk_widget_show_all (wd->window);
-
-  /* add a timeout that will update the progress bar every 100ms */
-	wd->progress_id = g_timeout_add (100, update_progress_in_timeout, wd);
-
-
-  /* run the time-consuming operation in a separate thread */
-  thread = g_thread_new ("worker", worker, wd);
-  g_thread_unref (thread);
+			wd->pbar = gtk_progress_bar_new ();
+			gtk_container_add (GTK_CONTAINER (wd->progress_window), wd->pbar);
+			gtk_container_set_border_width (GTK_CONTAINER (wd->progress_window), 30);
+			gtk_window_set_default_size (GTK_WINDOW (wd->progress_window), 500, 200);
+			gtk_widget_show_all (wd->progress_window);
+			printf ("create thread\n");
+			/* run the time-consuming operation in a separate thread */
+			thread = g_thread_new ("worker", worker, wd);
+			g_thread_unref (thread);
+		} else {
+			error (wd,"no image");
+		}
+	}
 }
 gpointer
 worker (gpointer data)
 {
-  WorkerData *wd = data;
-  gchar cmd[30]={0};
-  gchar string[STRING_SIZE] = "";
-  g_snprintf(string,STRING_SIZE,"#G00 2000 3000$\n");
-  g_print("%s\n",string);
-  send_cmd(wd->fd, string);
-  while(cmd[0] != 'D'){
-    get_cmd(wd->fd,cmd);
-  }
-  g_print("%s\n",cmd);
-  cmd[0]='C';
-  g_snprintf(string,STRING_SIZE,"#G01 10 10$\n");
-  g_print("%s\n",string);
-  send_cmd(wd->fd, string);
-  while(cmd[0] != 'D'){
-    get_cmd(wd->fd,cmd);
-  }
-  g_print("%s\n",cmd);
-  cmd[0]='C';
-  g_snprintf(string,STRING_SIZE,"#G01 2000 3000$\n");
-  g_print("%s\n",string);
-  send_cmd(wd->fd, string);
-  while(cmd[0] != 'D'){
-    get_cmd(wd->fd,cmd);
-  }
-  g_print("%s\n",cmd);
-  cmd[0]='C';
-  g_snprintf(string,STRING_SIZE,"#G01 10 3000$\n");
-  g_print("%s\n",string);
-  send_cmd(wd->fd, string);
-  while(cmd[0] != 'D'){
-    get_cmd(wd->fd,cmd);
-  }
-  g_print("%s\n",cmd);
-  cmd[0]='C';
-  g_snprintf(string,STRING_SIZE,"#G01 2000 3000$\n");
-  g_print("%s\n",string);
-  send_cmd(wd->fd, string);
-  while(cmd[0] != 'D'){
-    get_cmd(wd->fd,cmd);
-  }
-  g_print("%s\n",cmd);
-  cmd[0]='C';
-  g_snprintf(string,STRING_SIZE,"#G00 0 0$\n");
-  g_print("%s\n",string);
-  send_cmd(wd->fd, string);
-
-  get_cmd(wd->fd,cmd);
-  /* hard work here */
-  // g_usleep (5000000);
-
-
-  /* we finished working, do something back in the main thread */
-	if(wd->progress_id > 0){
-		g_idle_add (worker_finish_in_idle, wd);
+	widgets *wd = (widgets *) data;
+	gchar response[STRING_SIZE]={0};
+	gchar string[STRING_SIZE] = {0};
+	struct gcode *gcode = get_gcode_ptr();
+	int i = 0;
+//---------------------------------------------------------------------------
+//--ADD MAXVAL
+//---------------------------------------------------------------------------
+	while (i <= wd->cmd_num) {
+		if(gcode[i].cmd[1] == '2'){
+			g_snprintf (string, STRING_SIZE, "#%s$", gcode[i].cmd);
+		}
+		else{
+			g_snprintf (string, STRING_SIZE, "#%s %.2f %.2f$", gcode[i].cmd,gcode[i].x_val, gcode[i].y_val);
+		}
+		g_print ("%s\n", string);
+		send_cmd (wd->fd, string);
+		memset (&response, 0, STRING_SIZE);
+		while (strcmp (response, DONE) != 0) {
+			get_cmd (wd->fd, response);
+		}
+		g_print ("%s", response);
+		response[0]='E';
+		response[1]='R';
+		response[2]='R';
+		if((response[0]=='E')&&(response[1]=='R')&&(response[2]=='R')){
+			error(wd,"help");
+			break;
+		}
+		if (GTK_IS_PROGRESS_BAR (wd->pbar) == 0) {
+			return FALSE;
+		}
+		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (wd->pbar), (float) i / wd->cmd_num);
+		i++;
 	}
+	/* we finished working, do something back in the main thread */
+	g_idle_add (worker_finish_in_idle, wd);
 
-  return NULL;
+	return NULL;
 }
 
-gboolean
-update_progress_in_timeout (gpointer data)
-{
-	WorkerData *wd = data;
-  // char *cmd=NULL;
-
-	if ( GTK_IS_PROGRESS_BAR(wd->pbar) == 0){
-	  g_source_remove (wd->progress_id);
-		wd->progress_id =0;
-		return FALSE;
-	}
-	gtk_progress_bar_pulse ((gpointer)wd->pbar);
-
-  return TRUE; /* keep running */
-}
 gboolean
 worker_finish_in_idle (gpointer data)
 {
-  WorkerData *wd = data;
+	widgets *wd = (widgets *) data;
 
-  /* we're done, stop updating the progress bar */
-  g_source_remove (wd->progress_id);
-  /* and destroy everything */
-  gtk_widget_destroy (wd->window);
-  g_free (wd);
+	/* destroy everything */
+	gtk_widget_destroy (wd->progress_window);
 
-  return FALSE; /* stop running */
+	return FALSE; /* stop running */
 }
 void
 stop_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-	// widgets *a = (widgets *) data;
-	printf("stop_callback\n");
+	widgets *wd = (widgets *) data;
+	printf ("stop_callback\n");
+
+	if (GTK_IS_WIDGET (wd->progress_window) == TRUE) {
+		g_idle_add (worker_finish_in_idle, wd);
+	}
 }
 
 void
@@ -152,7 +115,6 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 	widgets *a = (widgets *) data;
 
 	GtkWidget *chooser;
-	// GtkFileFilter *filter;
 	chooser = gtk_file_chooser_dialog_new ("Open File ...",
 					       GTK_WINDOW (a ->window),
 					       GTK_FILE_CHOOSER_ACTION_OPEN,
@@ -160,31 +122,16 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 					       "_Open", GTK_RESPONSE_ACCEPT,
 					       NULL);
 	gtk_window_set_default_size (GTK_WINDOW (chooser), 300, 300);
-	//filter = gtk_file_filter_new();
-	//gtk_file_filter_add_pixbuf_formats (filter);
-	//gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (chooser), filter);
 
 	if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
 
 		a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
-		a->cmd_num =0;
 		a->cmd_num = parse_GCode (a->filename);
-		// if (a->pixbuf != NULL) {
-		// 	a->pixbuf = NULL;
-		// }
-
-		// a->pixbuf = gdk_pixbuf_new_from_file (a->filename, NULL);
-		// if (a->pixbuf == NULL) {
-		// 	image_fail (data);
-		// } else {
-		// 	gtk_image_set_from_pixbuf (GTK_IMAGE (a->image), a->pixbuf);
 
 		check_len ( (sizeof (a->msg) - strlen ("opened from ")), (sizeof (a->msg) - strlen ("Opened from ...")), a, 1);
 		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
 		a->filename = short_name (a->filename, '/');
 		gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
-		// g_object_unref (a->pixbuf);
-		// }
 	}
 	gtk_widget_destroy (chooser);
 }
@@ -233,9 +180,6 @@ save_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 		gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
 	}
 	gtk_widget_destroy (chooser);
-	// } else {
-	// 	noimage (data);
-	// }
 }
 void check_len (int maxlen, int messagelen, gpointer data, int flag)
 {
@@ -331,6 +275,7 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 	// obtain the size of the drawing area
 	w->xsize = gtk_widget_get_allocated_width (w->draw);
 	w->ysize = gtk_widget_get_allocated_height (w->draw);
+	// printf ("x %i y %i \n", w->xsize, w->ysize);
 
 	cairo_set_line_width (w->cr, 0.005);
 	// draw a white filled rectangle
@@ -344,26 +289,30 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 	cairo_set_source_rgb (w->cr, 0.0, 0.0, 0.0);
 
 	if (w->filename != NULL) {
-		printf ("filename %s\n", w->filename);
-		// w->filename = NULL;
-		printf ("cmd_num %i\n", w->cmd_num);
+		// printf ("filename %s\n", w->filename);
+		// printf ("cmd_num %i\n", w->cmd_num);
 
 		while (i <= w->cmd_num) {
-			printf ("%i %s %f %f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, -gcode[i].y_val/w->ysize+1);
-			if (gcode[i].cmd[2] == '0') {
-				cairo_move_to (w->cr, gcode[i].x_val/w->xsize, -gcode[i].y_val/w->ysize+1);
-			} else if (gcode[i].cmd[2] == '1') {
-				cairo_line_to (w->cr, gcode[i].x_val/w->xsize, -gcode[i].y_val/w->ysize+1);
+			// printf ("%i %s %f %f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, -gcode[i].y_val / w->ysize + 1);
+			if ( (gcode[i].x_val < X_MAX) && (gcode[i].y_val < Y_MAX)) {
+				if (gcode[i].cmd[2] == '0') {
+					cairo_move_to (w->cr, gcode[i].x_val / w->xsize, -gcode[i].y_val / w->ysize + 1);
+				} else if (gcode[i].cmd[2] == '1') {
+					cairo_line_to (w->cr, gcode[i].x_val / w->xsize, -gcode[i].y_val / w->ysize + 1);
+				}
+			 else if (gcode[i].cmd[1] == '2') {
+				cairo_move_to (w->cr, 0, 1);
 			}
-
+			}
 			i++;
 		}
-		if (w->cmd_num == 0){
-			image_fail(data);
+		if (w->cmd_num == 0) {
+			error (data,"Could not load gcode");
+			w->filename = NULL;
 		}
 		cairo_stroke (w->cr);
 		// cairo_move_to (w->cr, 0.0, 0.0);
-		// cairo_line_to (w->cr, 0.5,0.5);
+		// cairo_line_to (w->cr, 1,1);
 		// // cairo_line_to (w->cr, 1.0, 1.0);
 		// // cairo_line_to (w->cr, 0.0, 1.0);
 		// // cairo_line_to (w->cr, 0.0, 0.0);
@@ -389,22 +338,7 @@ cd_configure_event (GtkWidget *widget, GdkEventConfigure *event, gpointer data)
 	return TRUE;
 }
 
-
-void
-image_fail (gpointer data)
-{
-	GtkWidget *dialog;
-	widgets *a = (widgets *) data;
-	dialog = gtk_message_dialog_new (GTK_WINDOW (a->window),
-					 GTK_DIALOG_DESTROY_WITH_PARENT,
-					 GTK_MESSAGE_ERROR,
-					 GTK_BUTTONS_CLOSE,
-					 "Could not load gcode");
-	g_signal_connect (dialog, "response",
-			  G_CALLBACK (gtk_widget_destroy), NULL);
-	gtk_widget_show (dialog);
-}
-void noimage (gpointer data)
+void error (gpointer data,gchar *message)
 {
 	widgets *a = (widgets *) data;
 	GtkWidget *dialog;
@@ -412,7 +346,7 @@ void noimage (gpointer data)
 					 GTK_DIALOG_DESTROY_WITH_PARENT,
 					 GTK_MESSAGE_INFO,
 					 GTK_BUTTONS_CLOSE,
-					 "No image");
+					 "%s",message);
 	g_signal_connect (dialog, "response",
 			  G_CALLBACK (gtk_widget_destroy), NULL);
 	gtk_widget_show (dialog);

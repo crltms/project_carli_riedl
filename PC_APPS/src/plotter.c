@@ -45,6 +45,9 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 		argv1[i] = args1[i];
 	}
 	a->filename = argv1[1];
+	a->cmd_num=0;
+	// GTK_IS_WIDGET (a->progress_window) = FALSE;
+	// GTK_IS_PROGRESS_BAR (a->pbar) = 0;
 
 // define keyboard accelerators
 	const gchar *open_accels[2] = { "<Ctrl>O", NULL };
@@ -95,13 +98,13 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	gtk_container_add (GTK_CONTAINER (a->window), box);
 //drawing area
 	a->draw = gtk_drawing_area_new();
-	gtk_widget_set_size_request (a->draw, 390, 310);
+	gtk_widget_set_size_request (a->draw, X_MAX, Y_MAX);
 	gtk_box_pack_start (GTK_BOX (box), a->draw, TRUE, TRUE, 20);
 //Statusbar
 	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (box), hbox, FALSE, FALSE, 0);
 	a->statusbar = gtk_statusbar_new();
-	gtk_widget_set_size_request (a->statusbar, 500, 5);
+	gtk_widget_set_size_request (a->statusbar, X_MAX, 5);
 	gtk_box_pack_start (GTK_BOX (hbox), a->statusbar, FALSE, FALSE, 0);
 	a->id = gtk_statusbar_get_context_id (GTK_STATUSBAR (a->statusbar), "demo");
 	a->label = gtk_label_new (" ");
@@ -167,7 +170,7 @@ commandline (GtkApplication *app, GApplicationCommandLine *cmdline, gpointer dat
 	gtk_window_set_application (GTK_WINDOW (a->window), GTK_APPLICATION (app));
 	gtk_window_set_title (GTK_WINDOW (a->window), "Plotter");
 	gtk_window_set_position (GTK_WINDOW (a->window), GTK_WIN_POS_CENTER);
-	gtk_window_set_default_size (GTK_WINDOW (a->window), 500, 300);
+	gtk_window_set_default_size (GTK_WINDOW (a->window), X_MAX, Y_MAX);
 	gtk_window_set_default_icon_from_file ("icon.png", NULL);
 
 	construct_menu (app, NULL, (gpointer) a, cmdline);

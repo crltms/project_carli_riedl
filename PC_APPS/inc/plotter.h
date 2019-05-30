@@ -5,7 +5,8 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <glib/gprintf.h>
-#define HISTO_HEIGHT 100
+#define X_MAX 390
+#define Y_MAX 310
 
 typedef struct {
 	GtkApplication *app;
@@ -13,7 +14,7 @@ typedef struct {
 	GtkWidget *headerbar;
 	GtkWidget *statusbar;
 	guint id;
-	gchar msg[100];
+	gchar msg[60];
 	GtkWidget *label;
 	gchar *filename;
 	GtkWidget *image;
@@ -26,6 +27,9 @@ typedef struct {
 	gint cmd_num;
 	cairo_t* cr;
 	int fd;
+
+	GtkWidget  *progress_window;
+	GtkWidget  *pbar;
 
 } widgets;
 

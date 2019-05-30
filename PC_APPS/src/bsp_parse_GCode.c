@@ -41,18 +41,16 @@ int parse_GCode (char *filename)
 			if ( (gcode[i].cmd[0] == 'G') && (gcode[i].cmd[1] == '2') && (gcode[i].cmd[2] == '0')) {
 				inch_cm = 2.54;
 			}
+			if ( (gcode[i].cmd[0] == 'G') && (gcode[i].cmd[1] == '2') && (gcode[i].cmd[2] == '8')) {
+				num_of_cmd=i;
+				gcode[i].ID = i;
+				i++;
+			}
 			if ( ( (gcode[i].cmd[0] == 'G') && (gcode[i].cmd[1] == '0')) || (i > LINENUMBER) || (feof (pF))) {
 				if ( (gcode[i].cmd[0] == 'G') && (gcode[i].cmd[1] == '0')) {
 					fseek (pF, 1, SEEK_CUR);
 					if (fgetc (pF) == 'X') {
 						ret = fscanf (pF, "%lf Y%lf", &gcode[i].x_val, &gcode[i].y_val);
-						gcode[i].x_val = gcode[i].x_val * inch_cm;
-						gcode[i].y_val = gcode[i].y_val * inch_cm;
-						if ( (inc == 1) && (i != 0)) {
-							// printf("%f %f %f %f\n",gcode[i].x_val,gcode[0].x_val,gcode[i].y_val,gcode[0].y_val);
-							gcode[i].x_val = gcode[i].x_val + gcode[i - 1].x_val;
-							gcode[i].y_val = gcode[i].y_val + gcode[i - 1].y_val;
-						}
 						if (ret == 0) {
 							printf ("Error when reading file\n");
 							ret = fclose (pF);
@@ -60,6 +58,13 @@ int parse_GCode (char *filename)
 								printf ("%s wasn't closed correctly\n", filename);
 							}
 							return 0;
+						}
+						gcode[i].x_val = gcode[i].x_val * inch_cm;
+						gcode[i].y_val = gcode[i].y_val * inch_cm;
+						if ( (inc == 1) && (i != 0)) {
+							// printf("%f %f %f %f\n",gcode[i].x_val,gcode[0].x_val,gcode[i].y_val,gcode[0].y_val);
+							gcode[i].x_val = gcode[i].x_val + gcode[i - 1].x_val;
+							gcode[i].y_val = gcode[i].y_val + gcode[i - 1].y_val;
 						}
 						gcode[i].ID = i;
 						num_of_cmd = i;
