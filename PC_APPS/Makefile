@@ -3,6 +3,7 @@ CC	= gcc
 RM	= rm -rf
 CFLAGS	= `pkg-config --cflags --libs gtk+-3.0` --pedantic -Wall -g
 CFLAGS  += -std=c99
+CFLAGS  += -std=gnu99
 INCPATH	= -I./inc/
 SRC	= ./src/*.c
 OBJS	= $(SRC:.c=.o)

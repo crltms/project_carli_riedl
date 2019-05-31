@@ -13,12 +13,13 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define STRINGLENGTH 4
-#define LINENUMBER 1000
+#define STRINGLENGTH 255
+#define LINENUMBER 10000
+#define COMMANDLENGTH 4
 
 struct gcode {
   int ID;
-	char cmd [STRINGLENGTH];
+	char cmd [COMMANDLENGTH];
 	double x_val;
 	double y_val;
 };

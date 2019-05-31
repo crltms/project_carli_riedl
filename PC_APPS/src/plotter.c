@@ -11,6 +11,7 @@ const GActionEntry app_actions[] = {
 	{ "draw", draw_callback, NULL, NULL, NULL, {0, 0, 0} },
 	{ "stop", stop_callback, NULL, NULL, NULL, {0, 0, 0} },
 	{ "save", save_callback, NULL, NULL, NULL, {0, 0, 0} },
+	{ "uart", dialog_cb, NULL, NULL, NULL, {0, 0, 0} },
 	{ "quit", quit_callback, NULL, NULL, NULL, {0, 0, 0} },
 	{ "about", about_callback, NULL, NULL, NULL, {0, 0, 0} }
 };
@@ -25,7 +26,7 @@ static void
 construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplicationCommandLine *cmdline)
 {
 	GMenu *editmenu;
-	GtkWidget *openbutton,*startbutton, *stopbutton;
+	GtkWidget *openbutton, *startbutton, *stopbutton;
 	GMenu *gearmenu;
 	GtkWidget *gearmenubutton;
 	GtkWidget *gearicon;
@@ -45,9 +46,9 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 		argv1[i] = args1[i];
 	}
 	a->filename = argv1[1];
-	a->cmd_num=0;
-	// GTK_IS_WIDGET (a->progress_window) = FALSE;
-	// GTK_IS_PROGRESS_BAR (a->pbar) = 0;
+	a->cmd_num = 0;
+	a->progress_state = 0;
+	initial_uart_config (a);
 
 // define keyboard accelerators
 	const gchar *open_accels[2] = { "<Ctrl>O", NULL };
@@ -56,6 +57,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	const gchar *save_accels[2] = { "<Ctrl>S", NULL };
 	const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
 	const gchar *about_accels[2] = { "<Ctrl>A", NULL };
+	const gchar *uart_accels[2] = { "<Ctrl>U", NULL };
 // headerbar
 	a->headerbar = gtk_header_bar_new ();
 	gtk_widget_show (a->headerbar);
@@ -63,7 +65,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), "Riedl & Carli");
 	gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (a->headerbar), TRUE);
 	gtk_window_set_titlebar (GTK_WINDOW (a->window), a->headerbar);
-	gtk_window_set_resizable(GTK_WINDOW(a->window), FALSE);
+	gtk_window_set_resizable (GTK_WINDOW (a->window), FALSE);
 // OPEN button
 	openbutton = gtk_button_new_with_label ("Open");
 	gtk_header_bar_pack_start (GTK_HEADER_BAR (a->headerbar), openbutton);
@@ -86,6 +88,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 // gearmenu
 	gearmenu = g_menu_new();
 	g_menu_append (gearmenu, "_Save As ...", "app.save");
+	g_menu_append (gearmenu, "_Configure UART", "app.uart");
 	editmenu = g_menu_new();
 	g_menu_append (editmenu, "_About", "app.about");
 	g_menu_append_section (gearmenu, NULL, G_MENU_MODEL (editmenu));
@@ -115,11 +118,11 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 //commandline handling
 //------------------------------------------------------------------------------
 	if (a->filename != NULL) {
-		a->cmd_num =0;
-		a->cmd_num=parse_GCode (a->filename);;
-			g_sprintf (a->msg, "Opened %s from commandline",a->filename);
-			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
-			gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
+		a->cmd_num = 0;
+		a->cmd_num = parse_GCode (a->filename);;
+		g_sprintf (a->msg, "Opened %s from commandline", a->filename);
+		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
+		gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
 		// }
 	}
 
@@ -129,7 +132,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	g_signal_connect (a->draw, "draw", G_CALLBACK (cd_draw_callback), (gpointer) a);
 	// The configure event is emitted once after start and whenever the window is
 	// resized. The callback creates a drawing surface.
-	g_signal_connect (a->draw, "configure_event", G_CALLBACK (cd_configure_event),(gpointer) a);
+	g_signal_connect (a->draw, "configure_event", G_CALLBACK (cd_configure_event), (gpointer) a);
 
 
 	g_object_unref (editmenu);
@@ -138,9 +141,11 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
 					       "app.open", open_accels);
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
-							 	 "app.stop", stop_accels);
+					       "app.stop", stop_accels);
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
-							 	 "app.draw", draw_accels);
+					       "app.uart", uart_accels);
+	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
+					       "app.draw", draw_accels);
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
 					       "app.save", save_accels);
 	gtk_application_set_accels_for_action (GTK_APPLICATION (app),
@@ -185,20 +190,20 @@ main (int argc, char **argv)
 
 	int status;
 	// *************** Serial ***************
-  char *portname = "/dev/ttyUSB0";
-  int fd;
+	char *portname = "/dev/ttyUSB0";
+	int fd;
 
-  fd = open(portname, O_RDWR | O_NOCTTY | O_SYNC);
-  if (fd < 0) {
-      printf("Error opening %s: %s\n", portname, strerror(errno));
-      return -1;
-  }
-  /*baudrate 115200, 8 bits, no parity, 1 stop bit */
-  set_interface_attribs(fd, B9600);
+	fd = open (portname, O_RDWR | O_NOCTTY | O_SYNC);
+	if (fd < 0) {
+		printf ("Error opening %s: %s\n", portname, strerror (errno));
+		return -1;
+	}
+	/*baudrate 9600, 8 bits, no parity, 1 stop bit */
+	set_interface_attribs (fd, 9600, 0, 8, 1, 0, 0);
 
 	gtk_init (&argc, &argv);
 	widgets *a = g_malloc (sizeof (widgets));
-	a->fd =fd;
+	a->fd = fd;
 	a->app = gtk_application_new (NULL, G_APPLICATION_HANDLES_COMMAND_LINE);
 
 	g_signal_connect (a->app, "command-line", G_CALLBACK (commandline), (gpointer) a);

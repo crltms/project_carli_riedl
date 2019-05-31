@@ -10,7 +10,6 @@ void open_callback (GSimpleAction *action, GVariant *parameter, gpointer data);
 void draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data);
 void stop_callback (GSimpleAction *action, GVariant *parameter, gpointer data);
 void save_callback (GSimpleAction *action, GVariant *parameter, gpointer data);
-GtkFileFilter *file_choose (const char* name, GtkWidget *chooser);
 void check_len (int maxlen, int messagelen, gpointer data, int flag);
 gchar* short_name (gchar* name, gchar sign);
 void about_callback (GSimpleAction *action, GVariant *parameter, gpointer data);

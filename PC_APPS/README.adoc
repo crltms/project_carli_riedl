@@ -9,6 +9,9 @@ open: Crtl + 0
 save: Crtl + S
 quit: Crtl + Q
 about: Crtl + A
+config uart: Crtl + U
+start drawing: Crtl + D
+stop drawing: Crtl + F
 
 
 strtod:
