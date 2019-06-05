@@ -1,8 +1,7 @@
-xmc_gpio.h:367:26:XMC_GPIO_GetInput	16	static
 app.c:103:5:main	56	static
 app.c:169:13:AppTaskStart	32	static
 app.c:221:13:AppObjCreate	24	static
 app.c:270:14:AppTaskCreate	56	static
 app.c:492:6:SendAcknowledge	16	static
-app.c:539:6:AppTaskPlot	128	static
-app.c:812:13:AppTaskCom	136	static
+app.c:518:6:AppTaskPlot	136	static
+app.c:995:13:AppTaskCom	200	static
