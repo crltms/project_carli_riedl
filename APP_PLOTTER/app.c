@@ -725,7 +725,7 @@ void AppTaskPlot(void *p_arg)
       else
       {
         /*
-        
+
         */
         x_prop = 0;
         y_prop = 0;
@@ -741,11 +741,11 @@ void AppTaskPlot(void *p_arg)
           {
             dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
           }
-          if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==1)
+          if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==1))
           {
             dir_xy = dir_xy | Y_PLUS_PLOT_HIGH;
           }
-          if((XMC_GPIO_GetInput(D6) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==-1)
+          if((XMC_GPIO_GetInput(D6) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==-1))
           {
             dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
           }
