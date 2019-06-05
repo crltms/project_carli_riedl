@@ -4,5 +4,5 @@ app.c:169:13:AppTaskStart	32	static
 app.c:221:13:AppObjCreate	24	static
 app.c:270:14:AppTaskCreate	56	static
 app.c:492:6:SendAcknowledge	16	static
-app.c:518:6:AppTaskPlot	144	static
-app.c:846:13:AppTaskCom	200	static
+app.c:518:6:AppTaskPlot	168	static
+app.c:870:13:AppTaskCom	200	static

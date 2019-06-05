@@ -540,6 +540,8 @@ void AppTaskPlot(void *p_arg)
   uint8_t   y_prop = 0;
   uint8_t   x_prop_count = 0;
   uint8_t   y_prop_count = 0;
+  int   x_new = 0;
+  int   y_new = 0;
   int   x_axis_mov = 0;
   int   x_axis_curr = 0;
   int   x_axis_end = 0;
@@ -548,7 +550,7 @@ void AppTaskPlot(void *p_arg)
   int   y_axis_end = 0;
 
   // PEN UP and move to the 0-0-pos
-  BSP_PWM_SetPen(1);
+  /*BSP_PWM_SetPen(1);
   OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
   if(err != OS_ERR_NONE)
     APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
@@ -570,7 +572,7 @@ void AppTaskPlot(void *p_arg)
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
     OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-  }
+  }*/
   while(DEF_TRUE)
   {
     ack = 3;
@@ -605,6 +607,8 @@ void AppTaskPlot(void *p_arg)
       y_axis_curr = 0;
       x_axis_end = 0;
       y_axis_end = 0;
+      x_new = 0;
+      y_new = 0;
       // PEN UP and move to the 0-0-pos
       BSP_PWM_SetPen(1);
       OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
@@ -686,7 +690,7 @@ void AppTaskPlot(void *p_arg)
         y_axis_mov = 1;
         dir_y = Y_PLUS_PLOT_HIGH;
       }
-      if((x_axis_mov!=0)||(y_axis_mov!=0))
+      if(((x_axis_mov==0)&&(y_axis_mov!=0))||((x_axis_mov!=0)&&(y_axis_mov==0)))
       {
         // multiply number of g-code 200
         // move pen x axis
@@ -724,11 +728,20 @@ void AppTaskPlot(void *p_arg)
       }
       else
       {
-        /*
+        /**/
+        x_new = abs(x_axis_end - x_axis_curr);
+        y_new = abs(y_axis_end - y_axis_curr);
+        if(x_new > y_new)
+        {
+          y_prop = floor((float)x_new / (float)y_new);
+          x_prop = 1;
+        }
+        if(y_new > x_new)
+        {
+          x_prop = floor((float)y_new / (float)x_new);
+          y_prop = 1;
+        }
 
-        */
-        x_prop = 0;
-        y_prop = 0;
         ack = 1;
         while(1)
         {
@@ -758,52 +771,63 @@ void AppTaskPlot(void *p_arg)
           if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==1)))
             break;
 
-          if((x_prop == 1)&&(x_axis_mov==1))
-            x_axis_curr+=1;
-          else
-          {
-            if((x_prop == 1)&&(x_axis_mov==-1))
-              x_axis_curr-=1;
+         if(x_axis_curr != x_axis_end)
+         {
+            if((x_prop == 1)&&(x_axis_mov==1))
+              x_axis_curr+=1;
             else
             {
-              x_prop_count++;
-              if(x_prop_count == x_prop)
-              {
-                x_prop_count = 0;
-                x_axis_curr+=1;
-              }
+              if((x_prop == 1)&&(x_axis_mov==-1))
+                x_axis_curr-=1;
               else
               {
-                if(x_axis_mov==-1)
-                  dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
-                else if(x_axis_mov==1)
-                  dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
+                x_prop_count++;
+                if(x_prop_count == x_prop)
+                {
+                  x_prop_count = 0;
+                  x_axis_curr+=1;
+                }
+                else
+                {
+                  if(x_axis_mov==-1)
+                    dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
+                  else if(x_axis_mov==1)
+                    dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
+                }
               }
             }
-          }
-          if((y_prop == 1)&&(y_axis_mov==1))
-            y_axis_curr+=1;
-          else
-          {
-            if((y_prop == 1)&&(y_axis_mov==-1))
-              y_axis_curr-=1;
+         }
+         else
+          dir_xy = dir_xy & 0xf3;
+         if(y_axis_curr != y_axis_end)
+         {
+            if((y_prop == 1)&&(y_axis_mov==1))
+              y_axis_curr+=1;
             else
             {
-              y_prop_count++;
-              if(x_prop_count == x_prop)
-              {
-                y_prop_count = 0;
-                y_axis_curr+=1;
-              }
+              if((y_prop == 1)&&(y_axis_mov==-1))
+                y_axis_curr-=1;
               else
               {
-                if(y_axis_mov==-1)
-                  dir_xy = dir_xy & 0xfc; // set impulse of Y_MINUS_PLOT_HIGH to 0
-                else if(y_axis_mov==1)
-                  dir_xy = dir_xy & 0xfd; // set impulse of Y_PLUS_PLOT_HIGH to 0
+                y_prop_count++;
+                if(y_prop_count == y_prop)
+                {
+                  y_prop_count = 0;
+                  y_axis_curr+=1;
+                }
+                else
+                {
+                  if(y_axis_mov==-1)
+                    dir_xy = dir_xy & 0xfc; // set impulse of Y_MINUS_PLOT_HIGH to 0
+                  else if(y_axis_mov==1)
+                    dir_xy = dir_xy & 0xfd; // set impulse of Y_PLUS_PLOT_HIGH to 0
+                }
               }
             }
-          }
+         }
+         else
+            dir_xy = dir_xy & 0xfc;
+
           _mcp23s08_reset_ss(MCP23S08_SS);
           _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
           _mcp23s08_set_ss(MCP23S08_SS);
