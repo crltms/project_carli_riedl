@@ -529,7 +529,6 @@ void AppTaskPlot(void *p_arg)
   uint8_t reg_val = 0;
   char  compG00[] = "G00";
   char  compG01[] = "G01";
-  char  compG02[] = "G02";
   char  compG28[] = "G28";
   uint8_t   ack = 3;
   uint8_t   countsteps = 255;
@@ -550,10 +549,15 @@ void AppTaskPlot(void *p_arg)
   int   y_axis_end = 0;
 
   // PEN UP and move to the 0-0-pos
-  /*BSP_PWM_SetPen(1);
+  /**/
+  BSP_PWM_SetPen(1);
   OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
   if(err != OS_ERR_NONE)
-    APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+  {
+    SendAcknowledge(ack);
+    ack = 3;
+    APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+  }
   // Set the output of the pen OFF
   BSP_PWM_SetPen(3);
   while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
@@ -572,14 +576,18 @@ void AppTaskPlot(void *p_arg)
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
     OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-  }*/
+  }
   while(DEF_TRUE)
   {
-    ack = 3;
+    ack = 2;
     errno = 0;
     errmem = memset(&data[0], 0, MAX_MSG_LENGTH);
     if(errmem != &data)
-      APP_TRACE_DBG ("Error memset: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
 
     p_msg = OSQPend (&DUTY_QUEUE,                                          // <16>
           0,
@@ -588,18 +596,30 @@ void AppTaskPlot(void *p_arg)
           &ts,
           &err);
     if (err != OS_ERR_NONE)
-      APP_TRACE_DBG ("Error OSQPend: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
 
     if(msg_size < 40)
       errmem = memcpy (data, p_msg, msg_size - 1);
     else
-      APP_TRACE_DBG ("Error msg_size/memcpy: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
     if(errmem != &data)
-      APP_TRACE_DBG ("Error memcpy: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
 
     char *token = strtok(data, " ");
 
-    if(strncmp(data, compG28, 3) == 0) // Go to homeposition
+    if((strncmp(data, compG28, 3) == 0)&&(ack==2)) // Go to homeposition
     {
       ack = 1;
       // Reset x- and y- axisv
@@ -613,10 +633,14 @@ void AppTaskPlot(void *p_arg)
       BSP_PWM_SetPen(1);
       OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
       if(err != OS_ERR_NONE)
-        APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
       // Set the output of the pen OFF
       BSP_PWM_SetPen(3);
-      while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
+      while((XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))&&(ack==1))
       {
         dir_xy = 0x00;
         _mcp23s08_reset_ss(MCP23S08_SS);
@@ -649,196 +673,219 @@ void AppTaskPlot(void *p_arg)
         ret = BSP_PWM_SetPen(2);
       }
       if(!ret)
-        APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
       // Wait 100ms to move the PEN
       OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
       if(err != OS_ERR_NONE)
-        APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
       // Set the output of the pen OFF
       ret = BSP_PWM_SetPen(3);
       if(!ret)
-        APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
-
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
+      if(ack == 1)
+      {
         // Wait 500ms to move the PEN
-      OSTimeDlyHMSM(0,0,0,500,OS_OPT_TIME_HMSM_STRICT, &err);
+        OSTimeDlyHMSM(0,0,0,500,OS_OPT_TIME_HMSM_STRICT, &err);
 
-      token = strtok(NULL, " ");
-      x_axis_end = strtol(token, &pEnd,10);
-      token = strtok(NULL, " ");
-      y_axis_end = strtol(token, &pEnd,10);
-      if((x_axis_end - x_axis_curr)==0) // next point is equally
-        x_axis_mov = 0;
-      if((x_axis_end - x_axis_curr)<0)  // go in direction left --> minus
-      {
-        x_axis_mov = -1;
-        dir_x = X_MINUS_PLOT_HIGH;
-      }
-      if((x_axis_end - x_axis_curr)>0)  // go in direction right --> plus
-      {
-        x_axis_mov = 1;
-        dir_x = X_PLUS_PLOT_HIGH;
-      }
-      if((y_axis_end - y_axis_curr)==0) // next point is equally
-        y_axis_mov = 0;
-      if((y_axis_end - y_axis_curr)<0)  // go "up" --> minus
-      {
-        y_axis_mov = -1;
-        dir_y = Y_MINUS_PLOT_HIGH;
-      }
-      if((y_axis_end - y_axis_curr)>0)  // go "down" --> plus
-      {
-        y_axis_mov = 1;
-        dir_y = Y_PLUS_PLOT_HIGH;
-      }
-      if(((x_axis_mov==0)&&(y_axis_mov!=0))||((x_axis_mov!=0)&&(y_axis_mov==0)))
-      {
-        // multiply number of g-code 200
-        // move pen x axis
-        while(x_axis_mov!=0)
+        token = strtok(NULL, " ");
+        x_axis_end = strtol(token, &pEnd,10);
+        token = strtok(NULL, " ");
+        y_axis_end = strtol(token, &pEnd,10);
+        if((x_axis_end - x_axis_curr)==0) // next point is equally
+          x_axis_mov = 0;
+        if((x_axis_end - x_axis_curr)<0)  // go in direction left --> minus
         {
-          if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
-            break;
-          x_axis_curr+=x_axis_mov;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          x_axis_mov = -1;
+          dir_x = X_MINUS_PLOT_HIGH;
         }
-        // move pen y axis
-        while(y_axis_mov!=0)
+        if((x_axis_end - x_axis_curr)>0)  // go in direction right --> plus
         {
-          if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
-            break;
-          y_axis_curr+=y_axis_mov;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          x_axis_mov = 1;
+          dir_x = X_PLUS_PLOT_HIGH;
         }
-      }
-      else
-      {
-        /**/
-        x_new = abs(x_axis_end - x_axis_curr);
-        y_new = abs(y_axis_end - y_axis_curr);
-        if(x_new > y_new)
+        if((y_axis_end - y_axis_curr)==0) // next point is equally
+          y_axis_mov = 0;
+        if((y_axis_end - y_axis_curr)<0)  // go "up" --> minus
         {
-          y_prop = floor((float)x_new / (float)y_new);
-          x_prop = 1;
+          y_axis_mov = -1;
+          dir_y = Y_MINUS_PLOT_HIGH;
         }
-        if(y_new > x_new)
+        if((y_axis_end - y_axis_curr)>0)  // go "down" --> plus
         {
-          x_prop = floor((float)y_new / (float)x_new);
-          y_prop = 1;
+          y_axis_mov = 1;
+          dir_y = Y_PLUS_PLOT_HIGH;
         }
-
-        ack = 1;
-        while(1)
+        if(((x_axis_mov==0)&&(y_axis_mov!=0))||((x_axis_mov!=0)&&(y_axis_mov==0)))
         {
-          dir_xy = 0;
-          if((XMC_GPIO_GetInput(D8) == 1)&&(x_axis_curr != x_axis_end)&&(x_axis_mov==1))
+          // multiply number of g-code 200
+          // move pen x axis
+          while(x_axis_mov!=0)
           {
-            dir_xy = dir_xy | X_PLUS_PLOT_HIGH;
-          }
-          if((XMC_GPIO_GetInput(D7) == 1)&&(x_axis_curr != x_axis_end)&&(x_axis_mov==-1))
-          {
-            dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
-          }
-          if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==1))
-          {
-            dir_xy = dir_xy | Y_PLUS_PLOT_HIGH;
-          }
-          if((XMC_GPIO_GetInput(D6) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==-1))
-          {
-            dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
-          }
-          if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==-1)))
-            break;
-          if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==1)))
-            break;
-          if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==-1)))
-            break;
-          if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==1)))
-            break;
+            if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
+              break;
+            x_axis_curr+=x_axis_mov;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
 
-         if(x_axis_curr != x_axis_end)
-         {
-            if((x_prop == 1)&&(x_axis_mov==1))
-              x_axis_curr+=1;
-            else
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          }
+          // move pen y axis
+          while(y_axis_mov!=0)
+          {
+            if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
+              break;
+            y_axis_curr+=y_axis_mov;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          }
+        }
+        else
+        {
+          /**/
+          x_new = abs(x_axis_end - x_axis_curr);
+          y_new = abs(y_axis_end - y_axis_curr);
+          if(x_new > y_new)
+          {
+            y_prop = round((float)x_new / (float)y_new);
+            x_prop = 1;
+          }
+          if(y_new > x_new)
+          {
+            x_prop = round((float)y_new / (float)x_new);
+            y_prop = 1;
+          }
+          if(x_new ==  y_new)
+          {
+            x_prop = 1;
+            y_prop = 1;
+          }
+          while(1)
+          {
+            dir_xy = 0;
+            if((XMC_GPIO_GetInput(D8) == 1)&&(x_axis_curr != x_axis_end)&&(x_axis_mov==1))
             {
-              if((x_prop == 1)&&(x_axis_mov==-1))
-                x_axis_curr-=1;
-              else
-              {
-                x_prop_count++;
-                if(x_prop_count == x_prop)
-                {
-                  x_prop_count = 0;
+              dir_xy = dir_xy | X_PLUS_PLOT_HIGH;
+            }
+            if((XMC_GPIO_GetInput(D7) == 1)&&(x_axis_curr != x_axis_end)&&(x_axis_mov==-1))
+            {
+              dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
+            }
+            if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==1))
+            {
+              dir_xy = dir_xy | Y_PLUS_PLOT_HIGH;
+            }
+            if((XMC_GPIO_GetInput(D6) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==-1))
+            {
+              dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
+            }
+            if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==-1)))
+              break;
+            if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==1)))
+              break;
+            if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==-1)))
+              break;
+            if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==1)))
+              break;
+
+           if(x_axis_curr != x_axis_end)
+           {
+                if((x_prop == 1)&&(x_axis_mov==1))
                   x_axis_curr+=1;
-                }
                 else
                 {
-                  if(x_axis_mov==-1)
-                    dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
-                  else if(x_axis_mov==1)
-                    dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
+                  if((x_prop == 1)&&(x_axis_mov==-1))
+                    x_axis_curr-=1;
+                  else
+                  {
+                    x_prop_count++;
+                    if(x_prop_count == x_prop)
+                    {
+                      x_prop_count = 0;
+                      if(x_axis_mov==-1)
+                        x_axis_curr-=1;
+                      else
+                        x_axis_curr+=1;
+                    }
+                    else
+                    {
+                      if(x_axis_mov==-1)
+                        dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
+                      else if(x_axis_mov==1)
+                        dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
+                    }
+                  }
                 }
-              }
-            }
-         }
-         else
-          dir_xy = dir_xy & 0xf3;
-         if(y_axis_curr != y_axis_end)
-         {
-            if((y_prop == 1)&&(y_axis_mov==1))
-              y_axis_curr+=1;
-            else
-            {
-              if((y_prop == 1)&&(y_axis_mov==-1))
-                y_axis_curr-=1;
-              else
-              {
-                y_prop_count++;
-                if(y_prop_count == y_prop)
-                {
-                  y_prop_count = 0;
+             }
+           else
+            dir_xy = dir_xy & 0xf3;
+           if(y_axis_curr != y_axis_end)
+           {
+                if((y_prop == 1)&&(y_axis_mov==1))
                   y_axis_curr+=1;
-                }
                 else
                 {
-                  if(y_axis_mov==-1)
-                    dir_xy = dir_xy & 0xfc; // set impulse of Y_MINUS_PLOT_HIGH to 0
-                  else if(y_axis_mov==1)
-                    dir_xy = dir_xy & 0xfd; // set impulse of Y_PLUS_PLOT_HIGH to 0
+                  if((y_prop == 1)&&(y_axis_mov==-1))
+                    y_axis_curr-=1;
+                  else
+                  {
+                    y_prop_count++;
+                    if(y_prop_count == y_prop)
+                    {
+                      y_prop_count = 0;
+                      if(y_axis_mov == -1)
+                        y_axis_curr -= 1;
+                      else
+                      y_axis_curr+=1;
+                    }
+                    else
+                    {
+                      if(y_axis_mov==-1)
+                        dir_xy = dir_xy & 0xfc; // set impulse of Y_MINUS_PLOT_HIGH to 0
+                      else if(y_axis_mov==1)
+                        dir_xy = dir_xy & 0xfd; // set impulse of Y_PLUS_PLOT_HIGH to 0
+                    }
+                  }
                 }
-              }
-            }
-         }
-         else
-            dir_xy = dir_xy & 0xfc;
+             }
+           else
+              dir_xy = dir_xy & 0xfc;
 
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
 
-          while(countsteps!=0)
-            countsteps--;
-          countsteps = 255;
+            while(countsteps!=0)
+              countsteps--;
+            countsteps = 255;
 
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
         }
       }
     }
