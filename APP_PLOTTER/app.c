@@ -52,7 +52,7 @@
 /******************************************************************** DEFINES */
 #define DEBUG_DIM 0
 #define ACK  0x6
-#define MAX_MSG_LENGTH 20
+#define MAX_MSG_LENGTH 40
 #define NUM_MSG        3
 
 /********************************************************* FILE LOCAL GLOBALS */
@@ -493,28 +493,7 @@ void SendAcknowledge(uint8_t cmd)
 {
   switch(cmd)
   {
-    case 0:
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
-            break;
     case 1:
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
-            break;
-    case 2:
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
-            break;
-    case 28:
             XMC_UART_CH_Transmit (XMC_UART1_CH1, 'D');
             XMC_UART_CH_Transmit (XMC_UART1_CH1, 'O');
             XMC_UART_CH_Transmit (XMC_UART1_CH1, 'N');
@@ -523,14 +502,14 @@ void SendAcknowledge(uint8_t cmd)
             break;
     case 3:
             XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'R');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'R');
             XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
             break;
     default:
             XMC_UART_CH_Transmit (XMC_UART1_CH1, 'E');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
-            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'r');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'R');
+            XMC_UART_CH_Transmit (XMC_UART1_CH1, 'R');
             XMC_UART_CH_Transmit (XMC_UART1_CH1, '\n');
             break;
   }
@@ -550,13 +529,18 @@ void AppTaskPlot(void *p_arg)
   uint8_t reg_val = 0;
   char  compG00[] = "G00";
   char  compG01[] = "G01";
-  char  compG02[] = "G02";
   char  compG28[] = "G28";
-  uint8_t   ack = 2;
+  uint8_t   ack = 3;
   uint8_t   countsteps = 255;
   uint8_t   dir_x = 0x00;
   uint8_t   dir_y = 0x00;
   uint8_t   dir_xy = 0x00;
+  uint8_t   x_prop = 0;
+  uint8_t   y_prop = 0;
+  uint8_t   x_prop_count = 0;
+  uint8_t   y_prop_count = 0;
+  int   x_new = 0;
+  int   y_new = 0;
   int   x_axis_mov = 0;
   int   x_axis_curr = 0;
   int   x_axis_end = 0;
@@ -565,22 +549,24 @@ void AppTaskPlot(void *p_arg)
   int   y_axis_end = 0;
 
   // PEN UP and move to the 0-0-pos
+  /**/
   BSP_PWM_SetPen(1);
   OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
   if(err != OS_ERR_NONE)
-    APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
+  {
+    SendAcknowledge(ack);
+    ack = 3;
+    APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+  }
   // Set the output of the pen OFF
   BSP_PWM_SetPen(3);
-  /**/while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
+  while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
   {
     dir_xy = 0x00;
     _mcp23s08_reset_ss(MCP23S08_SS);
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
     OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-    // while(countsteps!=0)
-    //   countsteps--;
-    // countsteps = 255;
 
     if(XMC_GPIO_GetInput(D7))
       dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
@@ -593,11 +579,15 @@ void AppTaskPlot(void *p_arg)
   }
   while(DEF_TRUE)
   {
-    ack = 3;
+    ack = 2;
     errno = 0;
     errmem = memset(&data[0], 0, MAX_MSG_LENGTH);
     if(errmem != &data)
-      APP_TRACE_DBG ("Error memset: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
 
     p_msg = OSQPend (&DUTY_QUEUE,                                          // <16>
           0,
@@ -606,21 +596,51 @@ void AppTaskPlot(void *p_arg)
           &ts,
           &err);
     if (err != OS_ERR_NONE)
-      APP_TRACE_DBG ("Error OSQPend: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
 
-    if(msg_size < 20)
+    if(msg_size < 40)
       errmem = memcpy (data, p_msg, msg_size - 1);
     else
-      APP_TRACE_DBG ("Error msg_size/memcpy: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
     if(errmem != &data)
-      APP_TRACE_DBG ("Error memcpy: AppTaskPlot\n");
+    {
+      SendAcknowledge(ack);
+      ack = 3;
+      APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+    }
 
     char *token = strtok(data, " ");
 
-    if(strncmp(data, compG28, 3) == 0) // Go to homeposition
+    if((strncmp(data, compG28, 3) == 0)&&(ack==2)) // Go to homeposition
     {
-      ack = 28;
-      while(XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))
+      ack = 1;
+      // Reset x- and y- axisv
+      x_axis_curr = 0;
+      y_axis_curr = 0;
+      x_axis_end = 0;
+      y_axis_end = 0;
+      x_new = 0;
+      y_new = 0;
+      // PEN UP and move to the 0-0-pos
+      BSP_PWM_SetPen(1);
+      OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
+      if(err != OS_ERR_NONE)
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
+      // Set the output of the pen OFF
+      BSP_PWM_SetPen(3);
+      while((XMC_GPIO_GetInput(D6)||XMC_GPIO_GetInput(D7))&&(ack==1))
       {
         dir_xy = 0x00;
         _mcp23s08_reset_ss(MCP23S08_SS);
@@ -642,29 +662,40 @@ void AppTaskPlot(void *p_arg)
     }
     else
     {
-      if(strncmp(data, compG02, 3) != 0)
+      if(strncmp(data, compG00, 3) == 0)           // timer on and pen UP
       {
-        if(strncmp(data, compG00, 3) == 0)           // timer on and pen UP
-        {
-          ret = BSP_PWM_SetPen(1);
-          ack = 0;
-        }
-        if(strncmp(data, compG01, 3) == 0)           // timer on and pen DOWN
-        {
-          ack = 1;
-          ret = BSP_PWM_SetPen(2);
-        }
-        if(!ret)
-          APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
-        // Wait 100ms to move the PEN
-        OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
-        if(err != OS_ERR_NONE)
-          APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
-        // Set the output of the pen OFF
-        ret = BSP_PWM_SetPen(3);
-        if(!ret)
-          APP_TRACE_DBG ("Error returnval: AppTaskPlot\n");
-
+        ret = BSP_PWM_SetPen(1);
+        ack = 1;
+      }
+      if(strncmp(data, compG01, 3) == 0)           // timer on and pen DOWN
+      {
+        ack = 1;
+        ret = BSP_PWM_SetPen(2);
+      }
+      if(!ret)
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
+      // Wait 100ms to move the PEN
+      OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
+      if(err != OS_ERR_NONE)
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
+      // Set the output of the pen OFF
+      ret = BSP_PWM_SetPen(3);
+      if(!ret)
+      {
+        SendAcknowledge(ack);
+        ack = 3;
+        APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
+      }
+      if(ack == 1)
+      {
         // Wait 500ms to move the PEN
         OSTimeDlyHMSM(0,0,0,500,OS_OPT_TIME_HMSM_STRICT, &err);
 
@@ -672,7 +703,6 @@ void AppTaskPlot(void *p_arg)
         x_axis_end = strtol(token, &pEnd,10);
         token = strtok(NULL, " ");
         y_axis_end = strtol(token, &pEnd,10);
-
         if((x_axis_end - x_axis_curr)==0) // next point is equally
           x_axis_mov = 0;
         if((x_axis_end - x_axis_curr)<0)  // go in direction left --> minus
@@ -685,7 +715,6 @@ void AppTaskPlot(void *p_arg)
           x_axis_mov = 1;
           dir_x = X_PLUS_PLOT_HIGH;
         }
-
         if((y_axis_end - y_axis_curr)==0) // next point is equally
           y_axis_mov = 0;
         if((y_axis_end - y_axis_curr)<0)  // go "up" --> minus
@@ -698,91 +727,180 @@ void AppTaskPlot(void *p_arg)
           y_axis_mov = 1;
           dir_y = Y_PLUS_PLOT_HIGH;
         }
-        // multiply number of g-code 200
-        // move pen x axis
-        while(x_axis_mov!=0)
+        if(((x_axis_mov==0)&&(y_axis_mov!=0))||((x_axis_mov!=0)&&(y_axis_mov==0)))
         {
-          if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
-            break;
-          x_axis_curr+=x_axis_mov;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-          // while(countsteps!=0)
-          //   countsteps--;
-          // countsteps = 255;
+          // multiply number of g-code 200
+          // move pen x axis
+          while(x_axis_mov!=0)
+          {
+            if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
+              break;
+            x_axis_curr+=x_axis_mov;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
 
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          }
+          // move pen y axis
+          while(y_axis_mov!=0)
+          {
+            if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
+              break;
+            y_axis_curr+=y_axis_mov;
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+          }
         }
-        // move pen y axis
-        while(y_axis_mov!=0)
+        else
         {
-          if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
-            break;
-          y_axis_curr+=y_axis_mov;
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-          // while(countsteps!=0)
-          //   countsteps--;
-          // countsteps = 255;
+          /**/
+          int temp_x = 0;
+          int temp_y = 0;
+          x_new = abs(x_axis_end - x_axis_curr);
+          y_new = abs(y_axis_end - y_axis_curr);
+          if(x_new > y_new)
+          {
+            y_prop = round((float)x_new / (float)y_new);
+            x_prop = 1;
+          }
+          if(y_new > x_new)
+          {
+            x_prop = round((float)y_new / (float)x_new);
+            y_prop = 1;
+          }
+          if(x_new ==  y_new)
+          {
+            x_prop = 1;
+            y_prop = 1;
+          }
+          while(1)
+          {
+            dir_xy = 0;
+            if((XMC_GPIO_GetInput(D8) == 1)&&(x_axis_curr != x_axis_end)&&(x_axis_mov==1))
+            {
+              dir_xy = dir_xy | X_PLUS_PLOT_HIGH;
+            }
+            if((XMC_GPIO_GetInput(D7) == 1)&&(x_axis_curr != x_axis_end)&&(x_axis_mov==-1))
+            {
+              dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
+            }
+            if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==1))
+            {
+              dir_xy = dir_xy | Y_PLUS_PLOT_HIGH;
+            }
+            if((XMC_GPIO_GetInput(D6) == 1)&&(y_axis_curr != y_axis_end)&&(y_axis_mov==-1))
+            {
+              dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
+            }
+            if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==-1)))
+              break;
+            if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==1)))
+              break;
+            if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==-1)))
+              break;
+            if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==1)))
+              break;
 
-          _mcp23s08_reset_ss(MCP23S08_SS);
-          _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
-          _mcp23s08_set_ss(MCP23S08_SS);
-          OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+           if(x_axis_curr != x_axis_end)
+           {
+              if((x_prop == 1)&&(x_axis_mov==1))
+                x_axis_curr+=1;
+              else
+              {
+                if((x_prop == 1)&&(x_axis_mov==-1))
+                  x_axis_curr-=1;
+                else
+                {
+                  x_prop_count++;
+                  // Mal zum Testen eingebaut
+                  temp_x = round(x_prop_count*((float)y_new / (float)x_new));
+                  if(temp != x_prop_count)
+                    x_prop = temp_x;
+                  //*************************
+                  if(x_prop_count == x_prop)
+                  {
+                    x_prop_count = 0;
+                    if(x_axis_mov==-1)
+                      x_axis_curr-=1;
+                    else
+                      x_axis_curr+=1;
+                  }
+                  else
+                  {
+                    if(x_axis_mov==-1)
+                      dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
+                    else if(x_axis_mov==1)
+                      dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
+                  }
+                }
+              }
+             }
+           else
+            dir_xy = dir_xy & 0xf3;
+           if(y_axis_curr != y_axis_end)
+           {
+                if((y_prop == 1)&&(y_axis_mov==1))
+                  y_axis_curr+=1;
+                else
+                {
+                  if((y_prop == 1)&&(y_axis_mov==-1))
+                    y_axis_curr-=1;
+                  else
+                  {
+                    y_prop_count++;
+                    // Mal zum Testen eingebaut
+                    temp_y = round(y_prop_count*((float)x_new / (float)y_new));
+                    if(temp != y_prop_count)
+                      y_prop = temp_y;
+                    //*************************
+                    if(y_prop_count == y_prop)
+                    {
+                      y_prop_count = 0;
+                      if(y_axis_mov == -1)
+                        y_axis_curr -= 1;
+                      else
+                      y_axis_curr+=1;
+                    }
+                    else
+                    {
+                      if(y_axis_mov==-1)
+                        dir_xy = dir_xy & 0xfc; // set impulse of Y_MINUS_PLOT_HIGH to 0
+                      else if(y_axis_mov==1)
+                        dir_xy = dir_xy & 0xfd; // set impulse of Y_PLUS_PLOT_HIGH to 0
+                    }
+                  }
+                }
+             }
+           else
+            dir_xy = dir_xy & 0xfc;
+
+            //temp = round(y_prop_count*x_prop);
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+
+            while(countsteps!=0)
+              countsteps--;
+            countsteps = 255;
+
+            _mcp23s08_reset_ss(MCP23S08_SS);
+            _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
+            _mcp23s08_set_ss(MCP23S08_SS);
+          }
         }
       }
-      // if(strncmp(data, compG02, 3) == 0)
-      // {
-      //   ack = 2;
-      //   x_axis_curr = 0;
-      //   y_axis_curr = 0;
-      //   token = strtok(NULL, " ");
-      //   x_axis_end = strtol(token, &pEnd,10);
-      //   token = strtok(NULL, " ");
-      //   y_axis_end = strtol(token, &pEnd,10);
-      //   BSP_PWM_SetPen(2);
-      //   OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
-      //   if(err != OS_ERR_NONE)
-      //     APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
-      //   BSP_PWM_SetPen(3);
-      //   OSTimeDlyHMSM(0,0,0,500,OS_OPT_TIME_HMSM_STRICT, &err);
-      //   if(err != OS_ERR_NONE)
-      //     APP_TRACE_DBG ("Error TimeDelay: AppTaskMOVE\n");
-      //   while(1)
-      //   {
-      //     dir_xy = 0;
-      //     if((XMC_GPIO_GetInput(D8) == 1)&&(x_axis_curr != x_axis_end))
-      //     {
-      //       dir_xy = dir_xy | X_PLUS_PLOT_HIGH;
-      //     }
-      //     if((XMC_GPIO_GetInput(D5) == 1)&&(y_axis_curr != y_axis_end))
-      //     {
-      //       dir_xy = dir_xy | Y_PLUS_PLOT_HIGH;
-      //     }
-      //     if((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0)||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))
-      //       break;
-      //     x_axis_curr+=1;
-      //     y_axis_curr+=1;
-      //     _mcp23s08_reset_ss(MCP23S08_SS);
-      //     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
-      //     _mcp23s08_set_ss(MCP23S08_SS);
-      //
-      //     while(countsteps!=0)
-      //       countsteps--;
-      //     countsteps = 255;
-      //
-      //     _mcp23s08_reset_ss(MCP23S08_SS);
-      //     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
-      //     _mcp23s08_set_ss(MCP23S08_SS);
-      //   }
-      // }
     }
     SendAcknowledge(ack);
     APP_TRACE_DBG ("Led Task\n");
@@ -803,7 +921,7 @@ void AppTaskPlot(void *p_arg)
  *        Debug trace mesages are output to the SEGGER J-Link GDB Server.
  *
  *        (1) Debug or Flash the application.
- *        (2) Connect a TTL-USB UART cable:
+ *        (2) Connect a TTL-USB UART cable:// set highbyte 0
  *            GND (BLACK) - GND, TX (GREEN) - P0.0, RX (WHITE) - P0.1
  *        (3) Launch a terminal program and connect with 9600-8N1
  *            Enter strings like: #12345$, #abc$, etc.
@@ -838,19 +956,19 @@ static void AppTaskCom (void *p_arg)
       APP_TRACE_DBG ("Error OSQPend: AppTaskCom\n");
 
     // obtain message we received
-    if(msg_size < 20)
+    if(msg_size < 40)
       errmem = memset (&CommRxBuf[0], 0, MAX_MSG_LENGTH);
-    if((errmem != &CommRxBuf) || (msg_size > 19))
+    if((errmem != &CommRxBuf) || (msg_size > 39))
       APP_TRACE_DBG ("Error memset: AppTaskCom\n");
 
-    if(msg_size < 20)
+    if(msg_size < 40)
       errmem = memcpy (msg, (CPU_CHAR*) p_msg, msg_size - 1);
-    if((errmem != &msg) || (msg_size > 19))
+    if((errmem != &msg) || (msg_size > 39))
       APP_TRACE_DBG ("Error memcpy: AppTaskCom\n");
 
-    if(msg_size < 20)
+    if(msg_size < 40)
       errmem = memcpy (CommRxBuf, (CPU_CHAR*) p_msg, msg_size - 1);
-    if((errmem != &CommRxBuf) || (msg_size > 19))
+    if((errmem != &CommRxBuf) || (msg_size > 39))
       APP_TRACE_DBG ("Error memcpy: AppTaskCom\n");                     // <17>
     // release the memory partition allocated in the UART service routine
     OSMemPut (&Mem_Partition, p_msg, &err);                              // <18>
