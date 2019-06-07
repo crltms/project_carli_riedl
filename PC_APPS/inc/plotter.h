@@ -6,12 +6,14 @@
 #include <gdk/gdkkeysyms.h>
 #include <glib/gprintf.h>
 #include "uart_dialog.h"
-#define X_MAX 390
-#define Y_MAX 310
+#include "bsp_parse_GCode.h"
+#define X_MAX 348
+#define Y_MAX 297
 #define TIMEOUT 3000
 enum parity {NONE, EVEN, ODD};
 enum hwcheck {HWCHECKON, HWCHECKOFF};
 enum swcheck {SWCHECKON, SWCHECKOFF};
+enum smcheck {SMCHECKON, SMCHECKOFF};
 
 typedef struct {
 	GtkApplication *app;
@@ -44,6 +46,7 @@ typedef struct {
 	GtkWidget *stopbits_spinb;
 	GtkWidget *hw_check;
 	GtkWidget *sw_check;
+	GtkWidget *sm_check;
 	gchar *status_device;
 	gint status_baudrate;
 	enum  parity status_parity;
@@ -51,9 +54,13 @@ typedef struct {
 	gint status_stopbits;
 	enum  hwcheck status_hwcheck;
 	enum  swcheck status_swcheck;
+	enum  smcheck status_smcheck;
 	gboolean initial;
 	gint idd;
 	gint idb;
+
+	struct gcode gcode[LINENUMBER];
+	// struct gcode *gcode;
 
 } widgets;
 

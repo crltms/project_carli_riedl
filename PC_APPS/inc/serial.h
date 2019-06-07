@@ -13,7 +13,7 @@
 
 #define STRING_SIZE 40
 
-int set_interface_attribs(int fd, int speed, int parity, int databits, int stopbits, int hwcheck, int swcheck);
+int set_interface_attribs(int fd, int speed, int parity, int databits, int stopbits, int hwcheck, int swcheck, int smcheck);
 void set_mincount(int fd, int mcount);
 int send_cmd(int fd, char *cmd);
 int get_cmd(int fd, char *buff);

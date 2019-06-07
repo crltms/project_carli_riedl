@@ -119,7 +119,7 @@ construct_menu (GtkApplication *app, GtkWidget *box, gpointer data, GApplication
 //------------------------------------------------------------------------------
 	if (a->filename != NULL) {
 		a->cmd_num = 0;
-		a->cmd_num = parse_GCode (a->filename);;
+		a->cmd_num = parse_GCode (a->filename,a->gcode);
 		g_sprintf (a->msg, "Opened %s from commandline", a->filename);
 		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
 		gtk_header_bar_set_subtitle (GTK_HEADER_BAR (a->headerbar), a->filename);
@@ -199,7 +199,8 @@ main (int argc, char **argv)
 		return -1;
 	}
 	/*baudrate 9600, 8 bits, no parity, 1 stop bit */
-	set_interface_attribs (fd, 9600, 0, 8, 1, 0, 0);
+	set_interface_attribs (fd, 9600, 0, 8, 1, 1, 1,1);
+
 
 	gtk_init (&argc, &argv);
 	widgets *a = g_malloc (sizeof (widgets));

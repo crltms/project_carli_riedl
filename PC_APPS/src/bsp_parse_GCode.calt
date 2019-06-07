@@ -6,36 +6,10 @@
  */
 #include <bsp_parse_GCode.h>
 
-int get_linenum(char *filename){
-	FILE *pF;
-	int ret = 0;
-	int linenum = 0;
+struct gcode gcode[LINENUMBER];
+// struct gcode *gcode_ptr;
 
-	pF = fopen (filename, "r");
-	if (pF == NULL) {
-		printf ("%s can't be opened\n", filename);
-		return 0;
-	}
-	//count lines
-	char c[STRINGLENGTH];
-	while ( (!feof (pF))) {
-		fgets (c, STRINGLENGTH, pF);
-		if(((c[0]=='G')&&(c[1]=='0'))||((c[0]=='G')&&(c[1]=='2')&&(c[2]=='8'))){
-			// printf("%s\n",c);
-			linenum++;
-		}
-	}
-	printf ("linenum %i\n", linenum);
-	ret = fclose (pF);
-	if (ret != 0) {
-		printf ("%s wasn't closed correctly\n", filename);
-		return 0;
-	}
-	linenum=linenum-1;
-	return linenum;
-}
-
-int parse_GCode (char *filename, struct gcode *gcode)
+int parse_GCode (char *filename)
 {
 	FILE *pF;
 	int ret = 0;
@@ -43,6 +17,7 @@ int parse_GCode (char *filename, struct gcode *gcode)
 	int num_of_cmd = 0;
 	int inc = 0;
 	double inch_cm = 1;
+	// int linenum = 0;
 
 
 	pF = fopen (filename, "r");
@@ -50,6 +25,24 @@ int parse_GCode (char *filename, struct gcode *gcode)
 		printf ("%s can't be opened\n", filename);
 		return 0;
 	}
+	//count lines
+	// char c[STRINGLENGTH];
+	// while ( (!feof (pF))) {
+	// 	fgets (c, STRINGLENGTH, pF);
+	// 	linenum++;
+	// }
+	// printf ("linenum %i\n", linenum);
+	// fseek (pF, 0L, SEEK_SET);
+	// // gcode=malloc(sizeof(struct gcode)*linenum);
+	// struct gcode gcode[linenum];
+	// gcode[0].x_val=4434;
+	// gcode_ptr=gcode;
+	// gcode[0].x_val=444;
+	// printf("test adresse %p %.2f\n",(void *)&gcode_ptr, gcode_ptr[0].x_val);
+	// printf("testcpy adresse %p test cpy %.2f\n",(void *)&gcode,gcode[0].x_val);
+	// struct gcode *test=get_gcode_ptr();
+	// printf("testcpy adresse %p test cpy %.2f\n",(void *)&test,test[0].x_val);
+	//
 
 	while ( (!feof (pF)) && (i < LINENUMBER)) {
 		while (1) {
@@ -71,8 +64,6 @@ int parse_GCode (char *filename, struct gcode *gcode)
 			if ( (gcode[i].cmd[0] == 'G') && (gcode[i].cmd[1] == '2') && (gcode[i].cmd[2] == '8')) {
 				num_of_cmd = i;
 				gcode[i].ID = i;
-				gcode[i].x_val=0;
-				gcode[i].y_val=0;
 				i++;
 			}
 			if ( ( (gcode[i].cmd[0] == 'G') && (gcode[i].cmd[1] == '0')) || (i > LINENUMBER) || (feof (pF))) {
@@ -117,6 +108,10 @@ int parse_GCode (char *filename, struct gcode *gcode)
 
 	printf ("everything went right %i\n", num_of_cmd);
 	return num_of_cmd;
+}
+struct gcode *get_gcode_ptr (void)
+{
+	return gcode;
 }
 
 /*! EOF */

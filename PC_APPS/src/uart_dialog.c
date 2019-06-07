@@ -30,9 +30,11 @@ initial_uart_config (gpointer user_data)
   widgets *mw = (widgets *) user_data;
 	// initialize default settings for the UART IF
 	mw->status_device = "/dev/ttyUSB0";
+	mw->status_parity = NONE;
 	mw->status_baudrate = 9600;
 	mw->status_hwcheck = HWCHECKOFF;
 	mw->status_swcheck = SWCHECKOFF;
+	mw->status_smcheck = SMCHECKOFF;
 	mw->status_databits = 8;
 	mw->status_stopbits = 1;
 	// inital device settings
@@ -175,6 +177,17 @@ void dialog_cb (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 	if (mw->status_swcheck == SWCHECKOFF)
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (mw->sw_check), FALSE);
 	gtk_grid_attach (GTK_GRID (grid), mw->sw_check, 4, 2, 1, 1);
+	// label and checkboxes for HW and SW handshake
+	hs_label = gtk_label_new ("SafeMode");
+	gtk_grid_attach (GTK_GRID (grid), hs_label, 2, 3, 1, 1);
+	// SafeMode
+	mw->sm_check = gtk_check_button_new_with_label ("SM");
+	if (mw->status_smcheck == SMCHECKON)
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (mw->sm_check), TRUE);
+	if (mw->status_smcheck == SMCHECKOFF)
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (mw->sm_check), FALSE);
+	gtk_grid_attach (GTK_GRID (grid), mw->sm_check, 3, 3, 1, 1);
+	gtk_widget_set_tooltip_text(mw->sm_check, "Sets timeout of 25.5s for read()\nATTENTION: Errors can occur when disabled!");
 
 	// finally show the dialog and connect a callback
 	gtk_widget_show_all (mw->dialog);
@@ -261,6 +274,11 @@ set_new_status (gpointer user_data)
 		mw->status_swcheck = SWCHECKON;
 	else
 		mw->status_swcheck = SWCHECKOFF;
+	// read the SM checkbutton
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (mw->sm_check)))
+		mw->status_smcheck = SMCHECKON;
+	else
+		mw->status_smcheck = SMCHECKOFF;
 }
 
 /* based on the new settings construct a string to be displayed on a label in
@@ -278,6 +296,7 @@ config_uart (gpointer user_data)
   printf("stopbits %d\n",mw->status_stopbits);
   printf("hwcheck %d\n",mw->status_hwcheck);
   printf("swcheck %d\n",mw->status_swcheck);
+	printf("smcheck %d\n",mw->status_smcheck);
 
   close(mw->fd);
   if (mw->fd < 0) {
@@ -288,7 +307,7 @@ config_uart (gpointer user_data)
   if (mw->fd < 0) {
       printf("Error opening %s: %s\n", mw->status_device, strerror(errno));
   }
-  set_interface_attribs (mw->fd, mw->status_baudrate, mw->status_parity, mw->status_databits, mw->status_stopbits, mw->status_hwcheck, mw->status_swcheck);
+  set_interface_attribs (mw->fd, mw->status_baudrate, mw->status_parity, mw->status_databits, mw->status_stopbits, mw->status_hwcheck, mw->status_swcheck,mw->status_smcheck);
 }
 
 /** EOF */

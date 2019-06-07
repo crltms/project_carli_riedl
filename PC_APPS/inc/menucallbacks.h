@@ -3,7 +3,6 @@
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
-#include "bsp_parse_GCode.h"
 
 void quit_callback (GSimpleAction *action, GVariant *parameter, gpointer data);
 void open_callback (GSimpleAction *action, GVariant *parameter, gpointer data);
