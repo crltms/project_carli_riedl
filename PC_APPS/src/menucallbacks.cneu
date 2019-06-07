@@ -7,7 +7,7 @@
 #define EoF_RES 10     // \n
 #define EoF 36         //$
 #define SoF 35         //#
-const char DONE[] = "ERR\n";
+const char DONE[] = "DONE\n";
 const char ERR[] = "ERR\n";
 #define STEPS_PER_MM 91
 
@@ -38,7 +38,6 @@ draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 			gtk_container_add (GTK_CONTAINER (wd->progress_window), wd->pbar);
 			gtk_container_set_border_width (GTK_CONTAINER (wd->progress_window), 30);
 			gtk_window_set_default_size (GTK_WINDOW (wd->progress_window), 500, 200);
-			gtk_window_set_deletable(GTK_WINDOW (wd->progress_window), FALSE);
 			gtk_widget_show_all (wd->progress_window);
 			/* run the time-consuming operation in a separate thread */
 			thread = g_thread_new ("worker", worker, wd);
@@ -51,61 +50,75 @@ draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 gpointer
 worker (gpointer data)
 {
-	widgets *wd = (widgets *) data;
-	gchar response[STRING_SIZE] = {0};
-	gchar string[STRING_SIZE] = {0};
-	struct gcode gcode_copy[wd->cmd_num+1];
-	memcpy(gcode_copy,wd->gcode,sizeof( gcode_copy));
-  int i = 0;
-	int timeout = 0;
-	int ret_send = 0;
-	int ret_get = 0;
-	int cmd_num = wd->cmd_num;
-	wd->error_flag = 0;
-
-	while (i <= cmd_num) {
-		if ( (gcode_copy[i].x_val < X_MAX) && (gcode_copy[i].y_val < Y_MAX)) {
-			if (gcode_copy[i].cmd[1] == '2') {
-				g_snprintf (string, STRING_SIZE, "#%s$", gcode_copy[i].cmd);
-			} else {
-				g_snprintf (string, STRING_SIZE, "#%s %.2f %.2f$", gcode_copy[i].cmd, gcode_copy[i].x_val * STEPS_PER_MM, gcode_copy[i].y_val * STEPS_PER_MM);
-			}
-
-			ret_send = send_cmd (wd->fd, string);
-			g_print ("%s\n", string);
-			memset (&response, 0, STRING_SIZE);
-			while ( (strcmp (response, DONE) != 0) && (timeout < TIMEOUT)) {
-				ret_get = get_cmd (wd->fd, response);
-				if (ret_get > 0) {
-					wd->error_flag = 1;
-					break;
-				}
-				timeout++;
-				g_usleep (5000);
-			}
-			if ( (ret_get > 0) || (ret_send > 0)) {
-				wd->error_flag = 1;
-				break;
-			}
-			g_print ("%s", response);
-			// response[0]='E';
-			// response[1]='R';
-			// response[2]='R';
-			if ((strcmp (response, ERR) != 0) || timeout >= TIMEOUT) {
-				wd->error_flag = 1;
-				break;
-			}
-		}
-		if (GTK_IS_PROGRESS_BAR (wd->pbar) == 0) {
-			wd->progress_state = 0;
-			return FALSE;
-		}
-		i++;
-		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (wd->pbar), (float) i / cmd_num);
-	}
-	/* we finished working, do something back in the main thread */
-	g_idle_add (worker_finish_in_idle, wd);
-	g_thread_exit (NULL);
+// 	widgets *wd = (widgets *) data;
+// 	gchar response[STRING_SIZE] = {0};
+// 	gchar string[STRING_SIZE] = {0};
+// 	struct gcode *copy = get_gcode_ptr();
+// 	struct gcode gcode[LINENUMBER];
+// 	memcpy(gcode,copy,sizeof( gcode));
+//   int i = 0;
+//
+// 	while (i<9){
+// 		printf ("%i %s %f %f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, gcode[i].y_val);
+// 		i++;
+// 	}
+// 	i=0;
+//
+// 	int timeout = 0;
+// 	int ret_send = 0;
+// 	int ret_get = 0;
+// 	int cmd_num = wd->cmd_num;
+// //---------------------------------------------------------------------------
+// //---------------------------------------------------------------------------
+// //--ADD MAXVAL
+// //--CHANGE TIMEOUT
+// //--TEST ERR
+// //---------------------------------------------------------------------------
+// //---------------------------------------------------------------------------
+// 	wd->error_flag = 0;
+// 	while (i <= cmd_num) {
+// 		if ( (gcode[i].x_val < X_MAX) && (gcode[i].y_val < Y_MAX)) {
+// 			if (gcode[i].cmd[1] == '2') {
+// 				g_snprintf (string, STRING_SIZE, "#%s$", gcode[i].cmd);
+// 			} else {
+// 				g_snprintf (string, STRING_SIZE, "#%s %.2f %.2f$", gcode[i].cmd, gcode[i].x_val * STEPS_PER_MM, gcode[i].y_val * STEPS_PER_MM);
+// 			}
+//
+// 			ret_send = send_cmd (wd->fd, string);
+// 			g_print ("%s\n", string);
+// 			memset (&response, 0, STRING_SIZE);
+// 			while ( (strcmp (response, DONE) != 0) && (timeout < TIMEOUT)) {
+// 				ret_get = get_cmd (wd->fd, response);
+// 				if (ret_get > 0) {
+// 					wd->error_flag = 1;
+// 					break;
+// 				}
+// 				timeout++;
+// 				g_usleep (5000);
+// 			}
+// 			if ( (ret_get > 0) || (ret_send > 0)) {
+// 				wd->error_flag = 1;
+// 				break;
+// 			}
+// 			g_print ("%s", response);
+// 			// response[0]='E';
+// 			// response[1]='R';
+// 			// response[2]='R';
+// 			if ( ( (response[0] == 'E') && (response[1] == 'R') && (response[2] == 'R')) || timeout >= TIMEOUT) {
+// 				wd->error_flag = 1;
+// 				break;
+// 			}
+// 		}
+// 		if (GTK_IS_PROGRESS_BAR (wd->pbar) == 0) {
+// 			wd->progress_state = 0;
+// 			return FALSE;
+// 		}
+// 		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (wd->pbar), (float) i / cmd_num);
+// 		i++;
+// 	}
+// 	/* we finished working, do something back in the main thread */
+// 	g_idle_add (worker_finish_in_idle, wd);
+// 	g_thread_exit (NULL);
 
 	return NULL;
 }
@@ -114,7 +127,7 @@ gboolean
 worker_finish_in_idle (gpointer data)
 {
 	widgets *wd = (widgets *) data;
-	printf ("destroy callback\n");
+
 	/* destroy everything */
 	gtk_widget_destroy (wd->progress_window);
 	wd->progress_state = 0;
@@ -139,6 +152,7 @@ void
 open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
 	widgets *a = (widgets *) data;
+	// struct gcode *gcode = NULL;
 
 	GtkWidget *chooser;
 	chooser = gtk_file_chooser_dialog_new ("Open File ...",
@@ -152,7 +166,35 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 	if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
 
 		a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
-		a->cmd_num = parse_GCode (a->filename,a->gcode);
+		// a->cmd_num = parse_GCode (a->filename);
+
+		int linenum = get_linenum(a->filename);
+		// if(gcode != NULL){
+		// 	free(gcode);
+		// 	gcode=NULL;
+		// }
+		struct gcode *gcode=malloc(sizeof(struct gcode)*linenum);
+		// struct gcode gcode[linenum];
+		struct gcode copy[linenum];
+		// struct gcode *copy;
+		a->cmd_num = parse_GCode (a->filename, gcode);
+		int i=0;
+	 while(i<=7){
+	 	printf ("%i %s %f %f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, gcode[i].y_val);
+	 	i++;
+	 }
+	 if(a->cmd_num < 10){
+		 memcpy(copy,gcode,sizeof(copy));
+		 printf("copy\n");
+	 }
+	 i=0;
+	 free(gcode);
+	 gcode=NULL;
+	 while(i < 7){
+		printf ("%i %s %f %f\n", copy[i].ID, copy[i].cmd, copy[i].x_val, copy[i].y_val);
+		i++;
+	 }
+
 
 		check_len ( (sizeof (a->msg) - strlen ("opened from ")), (sizeof (a->msg) - strlen ("Opened from ...")), a, 1);
 		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
@@ -165,53 +207,54 @@ open_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 void
 save_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
-	widgets *a = (widgets *) data;
-	if (a->filename != NULL) {
-		GtkWidget *chooser;
-		FILE *pF;
-		gchar filename_old[STRINGLENGTH];
-		int ret = 0;
-		int i = 0;
-		strcpy (filename_old, a->filename);
-
-		chooser = gtk_file_chooser_dialog_new ("File Save ...",
-						       GTK_WINDOW (a ->window),
-						       GTK_FILE_CHOOSER_ACTION_SAVE,
-						       "_Cancel", GTK_RESPONSE_CANCEL,
-						       "_Save", GTK_RESPONSE_ACCEPT,
-						       NULL);
-
-		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), "output.txt");
-		if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
-			a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
-
-			pF = fopen (a->filename, "w");
-			if (pF == NULL) {
-				printf ("%s can't be opened\n", a->filename);
-			}
-			if (a->gcode != NULL) {
-				while (i <= a->cmd_num) {
-					ret = fprintf (pF, "%i %s %.2f %.2f\n", a->gcode[i].ID, a->gcode[i].cmd, a->gcode[i].x_val, a->gcode[i].y_val);
-					if (ret < 0) {
-						printf ("Error when writing data\n");
-						break;
-					}
-					i++;
-				}
-			}
-			ret = fclose (pF);
-			if (ret != 0) {
-				printf ("%s wasn't closed correctly\n", a->filename);
-			}
-
-			check_len ( (sizeof (a->msg) - strlen ("saved to ")), (sizeof (a->msg) - strlen ("saved to ...")), a, 0);
-			gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
-		}
-		gtk_widget_destroy (chooser);
-		strcpy (a->filename, filename_old);
-	} else {
-		error (a, "Nothing to safe");
-	}
+	// widgets *a = (widgets *) data;
+	// if (a->filename != NULL) {
+	// 	struct gcode *gcode = get_gcode_ptr();
+	// 	GtkWidget *chooser;
+	// 	FILE *pF;
+	// 	gchar filename_old[STRINGLENGTH];
+	// 	int ret = 0;
+	// 	int i = 0;
+	// 	strcpy (filename_old, a->filename);
+	//
+	// 	chooser = gtk_file_chooser_dialog_new ("File Save ...",
+	// 					       GTK_WINDOW (a ->window),
+	// 					       GTK_FILE_CHOOSER_ACTION_SAVE,
+	// 					       "_Cancel", GTK_RESPONSE_CANCEL,
+	// 					       "_Save", GTK_RESPONSE_ACCEPT,
+	// 					       NULL);
+	//
+	// 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (chooser), "output.txt");
+	// 	if (gtk_dialog_run (GTK_DIALOG (chooser)) == GTK_RESPONSE_ACCEPT) {
+	// 		a->filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (chooser));
+	//
+	// 		pF = fopen (a->filename, "w");
+	// 		if (pF == NULL) {
+	// 			printf ("%s can't be opened\n", a->filename);
+	// 		}
+	// 		if (gcode != NULL) {
+	// 			while (i <= a->cmd_num) {
+	// 				ret = fprintf (pF, "%i %s %.2f %.2f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, gcode[i].y_val);
+	// 				if (ret < 0) {
+	// 					printf ("Error when writing data\n");
+	// 					break;
+	// 				}
+	// 				i++;
+	// 			}
+	// 		}
+	// 		ret = fclose (pF);
+	// 		if (ret != 0) {
+	// 			printf ("%s wasn't closed correctly\n", a->filename);
+	// 		}
+	//
+	// 		check_len ( (sizeof (a->msg) - strlen ("saved to ")), (sizeof (a->msg) - strlen ("saved to ...")), a, 0);
+	// 		gtk_statusbar_push (GTK_STATUSBAR (a->statusbar), a->id, a->msg);
+	// 	}
+	// 	gtk_widget_destroy (chooser);
+	// 	strcpy (a->filename, filename_old);
+	// } else {
+	// 	error (a, "Nothing to safe");
+	// }
 }
 void check_len (int maxlen, int messagelen, gpointer data, int flag)
 {
@@ -289,12 +332,14 @@ void
 cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	widgets *w = (widgets*) data;
+	// struct gcode *gcode = get_gcode_ptr();
 
 	int i = 0;
 
 	// obtain the size of the drawing area
 	w->xsize = gtk_widget_get_allocated_width (w->draw);
 	w->ysize = gtk_widget_get_allocated_height (w->draw);
+	// printf ("x %i y %i \n", w->xsize, w->ysize);
 
 	cairo_set_line_width (w->cr, 0.005);
 	// draw a white filled rectangle
@@ -308,28 +353,37 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 	cairo_set_source_rgb (w->cr, 0.0, 0.0, 0.0);
 
 	if (w->filename != NULL) {
+		// printf ("filename %s\n", w->filename);
+		// printf ("cmd_num %i\n", w->cmd_num);
 		// int val=25; //for mandala
 		int val=1;
 
-		while (i <= w->cmd_num) {
-			// printf ("%i %s %f %f\n", w->gcode[i].ID, w->gcode[i].cmd, w->gcode[i].x_val, w->gcode[i].y_val);
-			if ( (w->gcode[i].x_val < X_MAX) && (w->gcode[i].y_val < Y_MAX)) {
-
-				if (w->gcode[i].cmd[2] == '0') {
-					cairo_move_to (w->cr, w->gcode[i].x_val / w->xsize*val, -w->gcode[i].y_val*val / w->ysize + 1);
-				} else if (w->gcode[i].cmd[2] == '1') {
-					cairo_line_to (w->cr, w->gcode[i].x_val / w->xsize*val, -w->gcode[i].y_val*val / w->ysize + 1);
-				} else if (w->gcode[i].cmd[1] == '2') {
-					cairo_move_to (w->cr, 0, 1);
-				}
-			}
-			i++;
-		}
-		if (w->cmd_num == 0) {
-			error (data, "Could not load gcode");
-			w->filename = NULL;
-		}
-		cairo_stroke (w->cr);
+		// while (i <= w->cmd_num) {
+		// 	// printf ("%i %s %f %f\n", gcode[i].ID, gcode[i].cmd, gcode[i].x_val, gcode[i].y_val);
+		// 	if ( (gcode[i].x_val < X_MAX) && (gcode[i].y_val < Y_MAX)) {
+		//
+		// 		if (gcode[i].cmd[2] == '0') {
+		// 			cairo_move_to (w->cr, gcode[i].x_val / w->xsize*val, -gcode[i].y_val*val / w->ysize + 1);
+		// 		} else if (gcode[i].cmd[2] == '1') {
+		// 			cairo_line_to (w->cr, gcode[i].x_val / w->xsize*val, -gcode[i].y_val*val / w->ysize + 1);
+		// 		} else if (gcode[i].cmd[1] == '2') {
+		// 			cairo_move_to (w->cr, 0, 1);
+		// 		}
+		// 	}
+		// 	i++;
+		// }
+		// if (w->cmd_num == 0) {
+		// 	error (data, "Could not load gcode");
+		// 	w->filename = NULL;
+		// }
+		// cairo_stroke (w->cr);
+		// cairo_move_to (w->cr, 0.0, 0.0);
+		// cairo_line_to (w->cr, 1,1);
+		// // cairo_line_to (w->cr, 1.0, 1.0);
+		// // cairo_line_to (w->cr, 0.0, 1.0);
+		// // cairo_line_to (w->cr, 0.0, 0.0);
+		// // cairo_move_to (w->cr, 0.0, 0.0);
+		// cairo_stroke (w->cr);
 	}
 
 }

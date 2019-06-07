@@ -2,7 +2,7 @@
 #include "serial.h"
 
 
-int set_interface_attribs (int fd, int speed, int parity, int databits, int stopbits, int hwcheck, int swcheck)
+int set_interface_attribs (int fd, int speed, int parity, int databits, int stopbits, int hwcheck, int swcheck, int smcheck)
 {
 	struct termios tty;
 
@@ -67,8 +67,13 @@ int set_interface_attribs (int fd, int speed, int parity, int databits, int stop
 	tty.c_oflag &= ~OPOST;
 
 	/* fetch bytes as they become available */
-	tty.c_cc[VMIN] = 1;
-	tty.c_cc[VTIME] = 1;
+//Safemode (timout)-------------------------------------------------------------
+		if (!smcheck) {
+			tty.c_cc[VMIN] = 0;
+		} else {
+			tty.c_cc[VMIN] = 1;
+		}
+	tty.c_cc[VTIME] = 255;
 
 	if (tcsetattr (fd, TCSANOW, &tty) != 0) {
 		printf ("Error from tcsetattr: %s\n", strerror (errno));

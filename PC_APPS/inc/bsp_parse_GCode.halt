@@ -24,8 +24,8 @@ struct gcode {
 	double y_val;
 };
 
-int get_linenum(char *filename);
-int parse_GCode (char *filename, struct gcode *gcode);
+int parse_GCode (char *filename);
+struct gcode *get_gcode_ptr(void);
 
 #endif
 
