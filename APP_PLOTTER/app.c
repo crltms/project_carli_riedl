@@ -766,6 +766,8 @@ void AppTaskPlot(void *p_arg)
         else
         {
           /**/
+          int temp_x = 0;
+          int temp_y = 0;
           x_new = abs(x_axis_end - x_axis_curr);
           y_new = abs(y_axis_end - y_axis_curr);
           if(x_new > y_new)
@@ -813,32 +815,37 @@ void AppTaskPlot(void *p_arg)
 
            if(x_axis_curr != x_axis_end)
            {
-                if((x_prop == 1)&&(x_axis_mov==1))
-                  x_axis_curr+=1;
+              if((x_prop == 1)&&(x_axis_mov==1))
+                x_axis_curr+=1;
+              else
+              {
+                if((x_prop == 1)&&(x_axis_mov==-1))
+                  x_axis_curr-=1;
                 else
                 {
-                  if((x_prop == 1)&&(x_axis_mov==-1))
-                    x_axis_curr-=1;
+                  x_prop_count++;
+                  // Mal zum Testen eingebaut
+                  temp_x = round(x_prop_count*((float)y_new / (float)x_new));
+                  if(temp != x_prop_count)
+                    x_prop = temp_x;
+                  //*************************
+                  if(x_prop_count == x_prop)
+                  {
+                    x_prop_count = 0;
+                    if(x_axis_mov==-1)
+                      x_axis_curr-=1;
+                    else
+                      x_axis_curr+=1;
+                  }
                   else
                   {
-                    x_prop_count++;
-                    if(x_prop_count == x_prop)
-                    {
-                      x_prop_count = 0;
-                      if(x_axis_mov==-1)
-                        x_axis_curr-=1;
-                      else
-                        x_axis_curr+=1;
-                    }
-                    else
-                    {
-                      if(x_axis_mov==-1)
-                        dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
-                      else if(x_axis_mov==1)
-                        dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
-                    }
+                    if(x_axis_mov==-1)
+                      dir_xy = dir_xy & 0xf3; // set impulse of X_MINUS_PLOT_HIGH to 0
+                    else if(x_axis_mov==1)
+                      dir_xy = dir_xy & 0xf7; // set impulse of X_PLUS_PLOT_HIGH to 0
                   }
                 }
+              }
              }
            else
             dir_xy = dir_xy & 0xf3;
@@ -853,6 +860,11 @@ void AppTaskPlot(void *p_arg)
                   else
                   {
                     y_prop_count++;
+                    // Mal zum Testen eingebaut
+                    temp_y = round(y_prop_count*((float)x_new / (float)y_new));
+                    if(temp != y_prop_count)
+                      y_prop = temp_y;
+                    //*************************
                     if(y_prop_count == y_prop)
                     {
                       y_prop_count = 0;
@@ -872,8 +884,9 @@ void AppTaskPlot(void *p_arg)
                 }
              }
            else
-              dir_xy = dir_xy & 0xfc;
+            dir_xy = dir_xy & 0xfc;
 
+            //temp = round(y_prop_count*x_prop);
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
