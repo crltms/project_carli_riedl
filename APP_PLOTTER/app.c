@@ -824,13 +824,15 @@ void AppTaskPlot(void *p_arg)
                 else
                 {
                   x_prop_count++;
-                  // Mal zum Testen eingebaut
-                  temp_x = round(x_prop_count*((float)y_new / (float)x_new));
-                  if(temp != x_prop_count)
-                    x_prop = temp_x;
-                  //*************************
                   if(x_prop_count == x_prop)
                   {
+                    /* Neue Funktion, Verhältnis wird immer neu berechnet*/
+                    x_new = abs(x_axis_end-x_axis_curr);
+                    y_new = abs(y_axis_end-y_axis_curr);
+                    temp_x = round((float)y_new / (float)x_new);
+                    if(temp_x != x_prop)
+                      x_prop = temp_x;
+/***                /****************************************************/
                     x_prop_count = 0;
                     if(x_axis_mov==-1)
                       x_axis_curr-=1;
@@ -860,13 +862,15 @@ void AppTaskPlot(void *p_arg)
                   else
                   {
                     y_prop_count++;
-                    // Mal zum Testen eingebaut
-                    temp_y = round(y_prop_count*((float)x_new / (float)y_new));
-                    if(temp != y_prop_count)
-                      y_prop = temp_y;
-                    //*************************
                     if(y_prop_count == y_prop)
                     {
+                      /* Neue Funktion, Verhältnis wird immer neu berechnet*/
+                      x_new = abs(x_axis_end-x_axis_curr);
+                      y_new = abs(y_axis_end-y_axis_curr);
+                      temp_y = round((float)x_new / (float)y_new);
+                      if(temp_y != y_prop)
+                        y_prop = temp_y;
+                      /*****************************************************/
                       y_prop_count = 0;
                       if(y_axis_mov == -1)
                         y_axis_curr -= 1;
