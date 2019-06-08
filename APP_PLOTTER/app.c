@@ -38,6 +38,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <lib_math.h>
 
 #if SEMI_HOSTING
@@ -65,8 +66,8 @@ static  OS_TCB   AppTaskPlotTCB;
 static  CPU_STK  AppTaskComStk[APP_CFG_TASK_COM_STK_SIZE];
 static  OS_TCB   AppTaskComTCB;
 
-static  CPU_STK  AppTaskXYTestStk[APP_CFG_TASK_XYTEST_STK_SIZE];
-static  OS_TCB   AppTaskXYTestTCB;
+// static  CPU_STK  AppTaskXYTestStk[APP_CFG_TASK_XYTEST_STK_SIZE];
+// static  OS_TCB   AppTaskXYTestTCB;
 
 // Memory Block                                                           // <2>
 OS_MEM      Mem_Partition;
@@ -522,11 +523,9 @@ void AppTaskPlot(void *p_arg)
   CPU_TS      ts;
   void        *p_msg;
   OS_MSG_SIZE msg_size;
-  uint16_t    dutycycle;
   char        data[MAX_MSG_LENGTH];
   char        *pEnd;
   _Bool       ret = false;
-  uint8_t reg_val = 0;
   char  compG00[] = "G00";
   char  compG01[] = "G01";
   char  compG28[] = "G28";
@@ -734,7 +733,12 @@ void AppTaskPlot(void *p_arg)
           while(x_axis_mov!=0)
           {
             if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1))||(x_axis_curr == x_axis_end))
+            {
+              // if endstop is reached send an error back to the pc
+              if(((XMC_GPIO_GetInput(D7) == 0)&&(x_axis_mov==-1))||((XMC_GPIO_GetInput(D8) == 0)&&(x_axis_mov==1)))
+                ack = 3;
               break;
+            }
             x_axis_curr+=x_axis_mov;
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
@@ -750,7 +754,12 @@ void AppTaskPlot(void *p_arg)
           while(y_axis_mov!=0)
           {
             if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1))||(y_axis_curr == y_axis_end))//(y_axis_curr == y_axis_end)//
+            {
+              // if endstop is reached send an error back to the pc
+              if(((XMC_GPIO_GetInput(D6) == 0)&&(y_axis_mov==-1))||((XMC_GPIO_GetInput(D5) == 0)&&(y_axis_mov==1)))
+                ack = 3;
               break;
+            }
             y_axis_curr+=y_axis_mov;
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
@@ -805,13 +814,33 @@ void AppTaskPlot(void *p_arg)
               dir_xy = dir_xy | Y_MINUS_PLOT_HIGH;
             }
             if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==-1)))
+            {
+              // if endstop is reached send an error back to the pc
+              if((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D6) == 0))
+                ack = 3;
               break;
+            }
             if((((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==1)&&(y_axis_mov==1)))
+            {
+              // if endstop is reached send an error back to the pc
+              if((XMC_GPIO_GetInput(D8) == 0)&&(XMC_GPIO_GetInput(D5) == 0))
+                ack = 3;
               break;
+            }
             if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D6) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==-1)))
+            {
+              // if endstop is reached send an error back to the pc
+              if((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D6) == 0))
+                ack = 3;
               break;
+            }
             if((((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D5) == 0))||((x_axis_curr == x_axis_end)&&(y_axis_curr == y_axis_end)))&&((x_axis_mov==-1)&&(y_axis_mov==1)))
+            {
+              // if endstop is reached send an error back to the pc
+              if((XMC_GPIO_GetInput(D7) == 0)&&(XMC_GPIO_GetInput(D5) == 0))
+                ack = 3;
               break;
+            }
 
            if(x_axis_curr != x_axis_end)
            {
@@ -832,7 +861,7 @@ void AppTaskPlot(void *p_arg)
                     temp_x = round((float)y_new / (float)x_new);
                     if(temp_x != x_prop)
                       x_prop = temp_x;
-/***                /****************************************************/
+                    /****************************************************/
                     x_prop_count = 0;
                     if(x_axis_mov==-1)
                       x_axis_curr-=1;
@@ -851,6 +880,7 @@ void AppTaskPlot(void *p_arg)
              }
            else
             dir_xy = dir_xy & 0xf3;
+
            if(y_axis_curr != y_axis_end)
            {
                 if((y_prop == 1)&&(y_axis_mov==1))
@@ -887,8 +917,8 @@ void AppTaskPlot(void *p_arg)
                   }
                 }
              }
-           else
-            dir_xy = dir_xy & 0xfc;
+            else
+              dir_xy = dir_xy & 0xfc;
 
             //temp = round(y_prop_count*x_prop);
             _mcp23s08_reset_ss(MCP23S08_SS);
@@ -939,7 +969,6 @@ static void AppTaskCom (void *p_arg)
   OS_MSG_SIZE msg_size;
   CPU_TS      ts;
   CPU_CHAR    msg[MAX_MSG_LENGTH];
-  CPU_INT08U  i = 0;
   CPU_CHAR    debug_msg[MAX_MSG_LENGTH + 30];
   CPU_CHAR    CommRxBuf[MAX_MSG_LENGTH];
   (void) p_arg;                                                          // <14>

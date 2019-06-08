@@ -55,4 +55,5 @@ app.o: app.c app_cfg.h ../UCOS3/uC-CPU/cpu_core.h \
  /home/tommi/Bin/gcc-arm-none-eabi-7-2017-q4-major/lib/gcc/arm-none-eabi/7.2.1/include-fixed/limits.h \
  /home/tommi/Bin/gcc-arm-none-eabi-7-2017-q4-major/lib/gcc/arm-none-eabi/7.2.1/include-fixed/syslimits.h \
  /home/tommi/Bin/gcc-arm-none-eabi-7-2017-q4-major/arm-none-eabi/include/limits.h \
+ /home/tommi/Bin/gcc-arm-none-eabi-7-2017-q4-major/arm-none-eabi/include/math.h \
  ../UCOS3/uC-LIB/lib_math.h BSP/debug_lib.h
