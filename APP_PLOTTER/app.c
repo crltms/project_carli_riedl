@@ -538,8 +538,8 @@ void AppTaskPlot(void *p_arg)
   uint8_t   y_prop = 0;
   uint8_t   x_prop_count = 0;
   uint8_t   y_prop_count = 0;
-  int   x_new = 0;
-  int   y_new = 0;
+  float   x_new = 0;
+  float   y_new = 0;
   int   x_axis_mov = 0;
   int   x_axis_curr = 0;
   int   x_axis_end = 0;
@@ -553,8 +553,8 @@ void AppTaskPlot(void *p_arg)
   OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
   if(err != OS_ERR_NONE)
   {
-    SendAcknowledge(ack);
     ack = 3;
+    SendAcknowledge(ack);
     APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
   }
   // Set the output of the pen OFF
@@ -565,7 +565,9 @@ void AppTaskPlot(void *p_arg)
     _mcp23s08_reset_ss(MCP23S08_SS);
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
-    OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+    while(countsteps!=0)
+      countsteps--;
+    countsteps = 255;
 
     if(XMC_GPIO_GetInput(D7))
       dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
@@ -574,8 +576,10 @@ void AppTaskPlot(void *p_arg)
     _mcp23s08_reset_ss(MCP23S08_SS);
     _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
     _mcp23s08_set_ss(MCP23S08_SS);
-    OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
   }
+  _mcp23s08_reset_ss(MCP23S08_SS);
+  _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
+  _mcp23s08_set_ss(MCP23S08_SS);
   while(DEF_TRUE)
   {
     ack = 2;
@@ -583,8 +587,8 @@ void AppTaskPlot(void *p_arg)
     errmem = memset(&data[0], 0, MAX_MSG_LENGTH);
     if(errmem != &data)
     {
-      SendAcknowledge(ack);
       ack = 3;
+      SendAcknowledge(ack);
       APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
     }
 
@@ -596,8 +600,8 @@ void AppTaskPlot(void *p_arg)
           &err);
     if (err != OS_ERR_NONE)
     {
-      SendAcknowledge(ack);
       ack = 3;
+      SendAcknowledge(ack);
       APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
     }
 
@@ -605,14 +609,14 @@ void AppTaskPlot(void *p_arg)
       errmem = memcpy (data, p_msg, msg_size - 1);
     else
     {
-      SendAcknowledge(ack);
       ack = 3;
+      SendAcknowledge(ack);
       APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
     }
     if(errmem != &data)
     {
-      SendAcknowledge(ack);
       ack = 3;
+      SendAcknowledge(ack);
       APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
     }
 
@@ -645,11 +649,9 @@ void AppTaskPlot(void *p_arg)
         _mcp23s08_reset_ss(MCP23S08_SS);
         _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
         _mcp23s08_set_ss(MCP23S08_SS);
-
         while(countsteps!=0)
           countsteps--;
         countsteps = 255;
-
         if(XMC_GPIO_GetInput(D7))
           dir_xy = dir_xy | X_MINUS_PLOT_HIGH;
         if(XMC_GPIO_GetInput(D5))
@@ -681,16 +683,16 @@ void AppTaskPlot(void *p_arg)
       OSTimeDlyHMSM(0,0,0,100,OS_OPT_TIME_HMSM_STRICT, &err);
       if(err != OS_ERR_NONE)
       {
-        SendAcknowledge(ack);
         ack = 3;
+        SendAcknowledge(ack);
         APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
       }
       // Set the output of the pen OFF
       ret = BSP_PWM_SetPen(3);
       if(!ret)
       {
-        SendAcknowledge(ack);
         ack = 3;
+        SendAcknowledge(ack);
         APP_TRACE_DBG ("Error TimeDelay: AppTaskPlot\n");
       }
       if(ack == 1)
@@ -743,12 +745,13 @@ void AppTaskPlot(void *p_arg)
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
-            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-
+            while(countsteps!=0)
+              countsteps--;
+            countsteps = 255;
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_x,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
-            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+
           }
           // move pen y axis
           while(y_axis_mov!=0)
@@ -764,35 +767,45 @@ void AppTaskPlot(void *p_arg)
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
-            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
-
+            while(countsteps!=0)
+              countsteps--;
+            countsteps = 255;
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_y,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
-            OSTimeDly(0.5, OS_OPT_TIME_DLY, &err);
+
           }
         }
         else
         {
-          /**/
           int temp_x = 0;
           int temp_y = 0;
-          x_new = abs(x_axis_end - x_axis_curr);
-          y_new = abs(y_axis_end - y_axis_curr);
+          int x_flag = 0;
+          int y_flag = 0;
+          float prop = 0;
+          float abst_old = 0;
+          x_new = abs((float)x_axis_end - (float)x_axis_curr);
+          y_new = abs((float)y_axis_end - (float)y_axis_curr);
           if(x_new > y_new)
           {
-            y_prop = round((float)x_new / (float)y_new);
-            x_prop = 1;
+            prop = x_new / y_new;
+            y_prop = round(x_new / y_new);
+            y_flag = 0;
+            x_flag = 1;
+            abst_old = x_new;
           }
           if(y_new > x_new)
           {
-            x_prop = round((float)y_new / (float)x_new);
-            y_prop = 1;
+            prop = y_new / x_new;
+            x_prop = round(y_new / x_new);
+            x_flag = 0;
+            y_flag = 1;
+            abst_old = y_new;
           }
           if(x_new ==  y_new)
           {
-            x_prop = 1;
-            y_prop = 1;
+            x_flag = 1;
+            y_flag = 1;
           }
           while(1)
           {
@@ -844,24 +857,25 @@ void AppTaskPlot(void *p_arg)
 
            if(x_axis_curr != x_axis_end)
            {
-              if((x_prop == 1)&&(x_axis_mov==1))
+              if((x_flag == 1)&&(x_axis_mov==1))
                 x_axis_curr+=1;
               else
               {
-                if((x_prop == 1)&&(x_axis_mov==-1))
+                if((x_flag == 1)&&(x_axis_mov==-1))
                   x_axis_curr-=1;
                 else
                 {
                   x_prop_count++;
                   if(x_prop_count == x_prop)
                   {
-                    /* Neue Funktion, Verhältnis wird immer neu berechnet*/
-                    x_new = abs(x_axis_end-x_axis_curr);
-                    y_new = abs(y_axis_end-y_axis_curr);
-                    temp_x = round((float)y_new / (float)x_new);
+                    /* Berechnung der Steps */
+                    x_new = abst_old - prop;
+                    temp_x = (int)abst_old - (int)x_new;
+                    abst_old = x_new;
+
                     if(temp_x != x_prop)
                       x_prop = temp_x;
-                    /****************************************************/
+                    /************************/
                     x_prop_count = 0;
                     if(x_axis_mov==-1)
                       x_axis_curr-=1;
@@ -877,30 +891,30 @@ void AppTaskPlot(void *p_arg)
                   }
                 }
               }
-             }
+            }
            else
             dir_xy = dir_xy & 0xf3;
 
            if(y_axis_curr != y_axis_end)
            {
-                if((y_prop == 1)&&(y_axis_mov==1))
+                if((y_flag == 1)&&(y_axis_mov==1))
                   y_axis_curr+=1;
                 else
                 {
-                  if((y_prop == 1)&&(y_axis_mov==-1))
+                  if((y_flag == 1)&&(y_axis_mov==-1))
                     y_axis_curr-=1;
                   else
                   {
                     y_prop_count++;
                     if(y_prop_count == y_prop)
                     {
-                      /* Neue Funktion, Verhältnis wird immer neu berechnet*/
-                      x_new = abs(x_axis_end-x_axis_curr);
-                      y_new = abs(y_axis_end-y_axis_curr);
-                      temp_y = round((float)x_new / (float)y_new);
+                      /* Berechnung der Steps */
+                      y_new = abst_old - prop;
+                      temp_y = (int)abst_old - (int)y_new;
+                      abst_old = y_new;
                       if(temp_y != y_prop)
                         y_prop = temp_y;
-                      /*****************************************************/
+                      /************************/
                       y_prop_count = 0;
                       if(y_axis_mov == -1)
                         y_axis_curr -= 1;
@@ -920,15 +934,12 @@ void AppTaskPlot(void *p_arg)
             else
               dir_xy = dir_xy & 0xfc;
 
-            //temp = round(y_prop_count*x_prop);
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,0x00,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
-
             while(countsteps!=0)
               countsteps--;
             countsteps = 255;
-
             _mcp23s08_reset_ss(MCP23S08_SS);
             _mcp23s08_reg_xfer(XMC_SPI1_CH0,MCP23S08_GPIO,dir_xy,MCP23S08_WR);
             _mcp23s08_set_ss(MCP23S08_SS);
