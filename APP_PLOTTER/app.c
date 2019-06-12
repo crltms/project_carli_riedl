@@ -948,7 +948,7 @@ void AppTaskPlot(void *p_arg)
       }
     }
     SendAcknowledge(ack);
-    APP_TRACE_DBG ("Led Task\n");
+    APP_TRACE_DBG ("AppTaskPlot\n");
   }
 }
 
