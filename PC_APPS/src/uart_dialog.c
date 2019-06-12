@@ -289,15 +289,6 @@ config_uart (gpointer user_data)
 {
   widgets *mw = (widgets *) user_data;
 
-  printf("device %s\n",mw->status_device);
-  printf("baudrate %d\n",mw->status_baudrate);
-  printf("parity %d\n",mw->status_parity);
-  printf("databits %d\n",mw->status_databits);
-  printf("stopbits %d\n",mw->status_stopbits);
-  printf("hwcheck %d\n",mw->status_hwcheck);
-  printf("swcheck %d\n",mw->status_swcheck);
-	printf("smcheck %d\n",mw->status_smcheck);
-
   close(mw->fd);
   if (mw->fd < 0) {
       printf("Error closing device %s\n", strerror(errno));

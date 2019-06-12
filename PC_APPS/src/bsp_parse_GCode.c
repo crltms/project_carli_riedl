@@ -21,7 +21,6 @@ int get_linenum(char *filename){
 	while ( (!feof (pF))) {
 		fgets (c, STRINGLENGTH, pF);
 		if(((c[0]=='G')&&(c[1]=='0'))||((c[0]=='G')&&(c[1]=='2')&&(c[2]=='8'))){
-			// printf("%s\n",c);
 			linenum++;
 		}
 	}
@@ -91,14 +90,11 @@ int parse_GCode (char *filename, struct gcode *gcode)
 						gcode[i].x_val = gcode[i].x_val * inch_cm;
 						gcode[i].y_val = gcode[i].y_val * inch_cm;
 						if ( (inc == 1) && (i != 0)) {
-							// printf ("%f %f %f %f\n", gcode[i].x_val, gcode[0].x_val, gcode[i].y_val, gcode[0].y_val);
 							gcode[i].x_val = gcode[i].x_val + gcode[i - 1].x_val;
 							gcode[i].y_val = gcode[i].y_val + gcode[i - 1].y_val;
 						}
 						gcode[i].ID = i;
 						num_of_cmd = i;
-						// printf ("%i %i %s %f %f\n", inc, gcode[i].ID, gcode[i].cmd, gcode[i].x_val, gcode[i].y_val);
-						// printf ("%i %i %s %f %f\n", inc, gcode_ptr[i].ID, gcode_ptr[i].cmd, gcode_ptr[i].x_val, gcode_ptr[i].y_val);
 					} else {
 						i = i - 1;
 					}
@@ -115,7 +111,6 @@ int parse_GCode (char *filename, struct gcode *gcode)
 		return 0;
 	}
 
-	printf ("everything went right %i\n", num_of_cmd);
 	return num_of_cmd;
 }
 

@@ -60,7 +60,6 @@ typedef struct {
 	gint idb;
 
 	struct gcode gcode[LINENUMBER];
-	// struct gcode *gcode;
 
 } widgets;
 

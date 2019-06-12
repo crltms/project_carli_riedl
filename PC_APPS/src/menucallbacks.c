@@ -4,10 +4,9 @@
 #include <string.h>
 #include "serial.h"
 
-#define EoF_RES 10     // \n
-#define EoF 36         //$
-#define SoF 35         //#
-const char DONE[] = "ERR\n";
+const char EoF = 36;  //$
+const char SoF = 35;  //#
+const char DONE[] = "DONE\n";
 const char ERR[] = "ERR\n";
 #define STEPS_PER_MM 91
 
@@ -25,7 +24,6 @@ void
 draw_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
 	widgets *wd = (widgets *) data;
-	printf ("draw_callback\n");
 	GThread    *thread;
 
 	if (wd->progress_state < 1) {
@@ -66,15 +64,15 @@ worker (gpointer data)
 	while (i <= cmd_num) {
 		if ( (gcode_copy[i].x_val < X_MAX) && (gcode_copy[i].y_val < Y_MAX)) {
 			if (gcode_copy[i].cmd[1] == '2') {
-				g_snprintf (string, STRING_SIZE, "#%s$", gcode_copy[i].cmd);
+				g_snprintf (string, STRING_SIZE, "%c%s%c",SoF, gcode_copy[i].cmd,EoF);
 			} else {
-				g_snprintf (string, STRING_SIZE, "#%s %.2f %.2f$", gcode_copy[i].cmd, gcode_copy[i].x_val * STEPS_PER_MM, gcode_copy[i].y_val * STEPS_PER_MM);
+				g_snprintf (string, STRING_SIZE, "%c%s %.2f %.2f%c", SoF,gcode_copy[i].cmd, gcode_copy[i].x_val * STEPS_PER_MM, gcode_copy[i].y_val * STEPS_PER_MM,EoF);
 			}
 
 			ret_send = send_cmd (wd->fd, string);
 			g_print ("%s\n", string);
 			memset (&response, 0, STRING_SIZE);
-			while ( (strcmp (response, DONE) != 0) && (timeout < TIMEOUT)) {
+			while ((!*response) && (timeout < TIMEOUT)) {
 				ret_get = get_cmd (wd->fd, response);
 				if (ret_get > 0) {
 					wd->error_flag = 1;
@@ -91,7 +89,7 @@ worker (gpointer data)
 			// response[0]='E';
 			// response[1]='R';
 			// response[2]='R';
-			if ((strcmp (response, ERR) != 0) || timeout >= TIMEOUT) {
+			if ((strcmp (response, ERR) == 0) || timeout >= TIMEOUT || (strcmp (response, DONE) != 0)) {
 				wd->error_flag = 1;
 				break;
 			}
@@ -114,7 +112,6 @@ gboolean
 worker_finish_in_idle (gpointer data)
 {
 	widgets *wd = (widgets *) data;
-	printf ("destroy callback\n");
 	/* destroy everything */
 	gtk_widget_destroy (wd->progress_window);
 	wd->progress_state = 0;
@@ -128,7 +125,6 @@ void
 stop_callback (GSimpleAction *action, GVariant *parameter, gpointer data)
 {
 	widgets *wd = (widgets *) data;
-	printf ("stop_callback\n");
 
 	if (wd->progress_state > 0) {
 		g_idle_add (worker_finish_in_idle, wd);
@@ -308,17 +304,14 @@ cd_draw_callback (GtkWidget *widget, GdkEvent *event, gpointer data)
 	cairo_set_source_rgb (w->cr, 0.0, 0.0, 0.0);
 
 	if (w->filename != NULL) {
-		// int val=25; //for mandala
-		int val=1;
 
 		while (i <= w->cmd_num) {
-			// printf ("%i %s %f %f\n", w->gcode[i].ID, w->gcode[i].cmd, w->gcode[i].x_val, w->gcode[i].y_val);
 			if ( (w->gcode[i].x_val < X_MAX) && (w->gcode[i].y_val < Y_MAX)) {
 
 				if (w->gcode[i].cmd[2] == '0') {
-					cairo_move_to (w->cr, w->gcode[i].x_val / w->xsize*val, -w->gcode[i].y_val*val / w->ysize + 1);
+					cairo_move_to (w->cr, w->gcode[i].x_val / w->xsize, -w->gcode[i].y_val / w->ysize + 1);
 				} else if (w->gcode[i].cmd[2] == '1') {
-					cairo_line_to (w->cr, w->gcode[i].x_val / w->xsize*val, -w->gcode[i].y_val*val / w->ysize + 1);
+					cairo_line_to (w->cr, w->gcode[i].x_val / w->xsize, -w->gcode[i].y_val / w->ysize + 1);
 				} else if (w->gcode[i].cmd[1] == '2') {
 					cairo_move_to (w->cr, 0, 1);
 				}
