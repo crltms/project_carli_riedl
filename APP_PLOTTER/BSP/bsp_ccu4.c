@@ -127,21 +127,10 @@ _Bool BSP_PWM_SetPen(uint8_t cmd)
     XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_0);
     XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC40);
   }
-  // if(led == 3)
-  // {
-  //   XMC_CCU4_SLICE_SetTimerPeriodMatch(SLICE_PTR_CCU40_CC41, PWM_PERIOD_VALUE_XY);
-  //   XMC_CCU4_SLICE_SetTimerCompareMatch(SLICE_PTR_CCU40_CC41, PWM_DEF_COMP_VALUE_XY);
-  //   XMC_CCU4_EnableShadowTransfer(MODULE_PTR_CCU40, XMC_CCU4_SHADOW_TRANSFER_SLICE_1);
-  //   XMC_CCU4_SLICE_StartTimer(SLICE_PTR_CCU40_CC41);
-  // }
   if(cmd == 3) // Timer ausschalten
   {
     XMC_CCU4_SLICE_StopTimer(SLICE_PTR_CCU40_CC40);
   }
-  // if(led == 5) // Timer ausschalten
-  // {
-  //   XMC_CCU4_SLICE_StopTimer(SLICE_PTR_CCU40_CC41);
-  // }
 
 
 	return true;

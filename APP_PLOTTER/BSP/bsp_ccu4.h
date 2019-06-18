@@ -28,10 +28,8 @@
 #define X_PLUS_PLOT_HIGH  0x0C
 
 #define SLICE_PTR_CCU40_CC40       CCU40_CC40  // braucht modul-number 2U für Modul(CCU42) und  slice-number 2U für CCU42_CCU42
-// #define SLICE_PTR_CCU40_CC41       CCU40_CC41  // braucht modul-number 2U für Modul(CCU42) und  slice-number 2U für CCU42_CCU42
 #define MODULE_PTR_CCU40           CCU40
 #define SLICE_NUMBER_CCU40_CC40    (0U)  // weil CCU42_CC42
-// #define SLICE_NUMBER_CCU40_CC41    (1U)  // weil CCU42_CC42
 
 #define D5 P1_15
 #define D6 P1_13
